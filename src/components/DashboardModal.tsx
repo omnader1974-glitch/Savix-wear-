@@ -57,6 +57,7 @@ import {
   deleteGovernorate,
   saveStoreSettings,
 } from '../lib/db';
+import { ColorPickerManager } from './ColorPickerManager';
 
 interface DashboardModalProps {
   isOpen: boolean;
@@ -110,11 +111,9 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   const [prodImagesList, setProdImagesList] = useState<string[]>([]);
   const [prodSizes, setProdSizes] = useState<string[]>(['M', 'L', 'XL']);
   const [prodColors, setProdColors] = useState<ProductColor[]>([
-    { name: 'أسود', hex: '#111111' },
-    { name: 'أبيض', hex: '#FFFFFF' },
+    { name: 'أسود كربوني', hex: '#111111' },
+    { name: 'أبيض ناصع', hex: '#FFFFFF' },
   ]);
-  const [newColorName, setNewColorName] = useState('');
-  const [newColorHex, setNewColorHex] = useState('#000000');
   const [prodIsNew, setProdIsNew] = useState(true);
   const [prodIsSale, setProdIsSale] = useState(false);
   const [prodIsBestSeller, setProdIsBestSeller] = useState(false);
@@ -961,53 +960,12 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Colors Selection */}
-                    <div className="space-y-2">
-                      <label className="block text-xs font-bold text-neutral-700">الألوان المتاحة</label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          placeholder="اسم اللون (مثال: أسود ملكي)"
-                          value={newColorName}
-                          onChange={(e) => setNewColorName(e.target.value)}
-                          className="border border-neutral-300 p-2 text-xs flex-1 focus:border-black focus:outline-none"
-                        />
-                        <input
-                          type="color"
-                          value={newColorHex}
-                          onChange={(e) => setNewColorHex(e.target.value)}
-                          className="w-10 h-9 p-0 border border-neutral-300 cursor-pointer bg-white"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!newColorName.trim()) return;
-                            setProdColors((prev) => [...prev, { name: newColorName.trim(), hex: newColorHex }]);
-                            setNewColorName('');
-                          }}
-                          className="bg-neutral-800 text-white px-3 py-2 text-xs font-bold hover:bg-black transition-colors"
-                        >
-                          إضافة لون
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {prodColors.map((c, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-200 px-2.5 py-1 text-xs text-neutral-800"
-                          >
-                            <span className="w-3 h-3 rounded-full border border-black/20" style={{ backgroundColor: c.hex }} />
-                            <span>{c.name}</span>
-                            <button
-                              type="button"
-                              onClick={() => setProdColors((prev) => prev.filter((_, idx) => idx !== i))}
-                              className="text-neutral-400 hover:text-red-600 mr-1"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
+                    {/* Professional Color Picker Manager */}
+                    <div className="pt-1 pb-2 border-t border-b border-neutral-200">
+                      <ColorPickerManager
+                        colors={prodColors}
+                        onChange={(newColors) => setProdColors(newColors)}
+                      />
                     </div>
 
                     {/* Description, Fit & Specs */}
@@ -1147,6 +1105,23 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                               >
                                 {p.inStock ? 'متوفر' : 'غير متوفر بالمخزون'}
                               </span>
+
+                              {/* Product Colors Mini Swatches */}
+                              {p.colors && p.colors.length > 0 && (
+                                <div className="flex items-center gap-1 bg-neutral-50 px-2 py-0.5 border border-neutral-200">
+                                  {p.colors.map((c, cIdx) => (
+                                    <span
+                                      key={cIdx}
+                                      className="w-2.5 h-2.5 rounded-full border border-black/20"
+                                      style={{ backgroundColor: c.hex }}
+                                      title={`${c.name} (${c.hex})`}
+                                    />
+                                  ))}
+                                  <span className="text-[10px] text-neutral-600 font-medium mr-1">
+                                    {p.colors.length} ألوان
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

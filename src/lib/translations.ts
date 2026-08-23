@@ -158,19 +158,39 @@ export function getEnglishOrderStatus(status?: string): string {
 
 export function getEnglishColorName(name: string): string {
   if (!name) return 'Standard';
-  const lower = name.trim().toLowerCase();
+  const trimmed = name.trim();
+
+  // If contains parenthesis with English name, e.g. "أسود كربوني (Onyx Black)"
+  const matchParen = trimmed.match(/\(([^)]+)\)/);
+  if (matchParen && matchParen[1] && !/[\u0600-\u06FF]/.test(matchParen[1])) {
+    return matchParen[1].trim();
+  }
+
+  // If already in English or has Latin characters primarily
+  if (!/[\u0600-\u06FF]/.test(trimmed)) {
+    return trimmed;
+  }
+
+  const lower = trimmed.toLowerCase();
+  if (lower.includes('فحم') || lower.includes('كربون')) return 'Carbon Black';
   if (lower.includes('أسود') || lower.includes('اسود') || lower === 'black') return 'Black';
+  if (lower.includes('عاجي') || lower.includes('أوف وايت') || lower.includes('اوف وايت')) return 'Off-White';
   if (lower.includes('أبيض') || lower.includes('ابيض') || lower === 'white') return 'White';
-  if (lower.includes('بيج') || lower === 'beige') return 'Beige';
-  if (lower.includes('كحلي') || lower.includes('أزرق') || lower === 'navy') return 'Navy Blue';
-  if (lower.includes('زيتي') || lower.includes('أخضر') || lower === 'olive') return 'Olive Green';
-  if (lower.includes('رمادي') || lower.includes('رصاصي') || lower === 'grey' || lower === 'gray') return 'Heather Grey';
-  if (lower.includes('بني') || lower === 'brown') return 'Mocha Brown';
-  if (lower.includes('نبيتي') || lower === 'burgundy') return 'Burgundy';
-  if (lower.includes('أوف وايت') || lower === 'off-white') return 'Off-White';
-  if (lower.includes('سماوي') || lower === 'sky-blue') return 'Sky Blue';
-  if (lower.includes('أحمر') || lower === 'red') return 'Crimson Red';
+  if (lower.includes('رمادي') || lower.includes('رصاصي') || lower.includes('سيلفر')) return 'Heather Grey';
+  if (lower.includes('رمل') || lower.includes('بيج') || lower === 'beige') return 'Sand Beige';
+  if (lower.includes('زيتي') || lower.includes('عسكري') || lower.includes('كاكي')) return 'Army Olive';
+  if (lower.includes('غابي') || lower.includes('زمرد') || lower.includes('أخضر') || lower.includes('اخضر')) return 'Forest Green';
+  if (lower.includes('سيج') || lower.includes('ميرمية')) return 'Sage Green';
+  if (lower.includes('كحلي') || lower.includes('ميدنايت') || lower.includes('ليلي')) return 'Midnight Navy';
+  if (lower.includes('رويال') || lower.includes('ملكي') || lower.includes('أزرق') || lower.includes('ازرق')) return 'Cobalt Blue';
+  if (lower.includes('سماوي') || lower.includes('باستيل')) return 'Sky Blue';
+  if (lower.includes('موكا') || lower.includes('شوكولاتة') || lower.includes('جملي') || lower.includes('بني')) return 'Mocha Brown';
+  if (lower.includes('مارون') || lower.includes('نبيتي') || lower.includes('بورجوندي') || lower.includes('عنابي')) return 'Burgundy';
+  if (lower.includes('قرمزي') || lower.includes('أحمر') || lower.includes('احمر')) return 'Crimson Red';
+  if (lower.includes('برتقالي') || lower.includes('ناري') || lower.includes('صدأ')) return 'Burnt Rust';
+  if (lower.includes('فولت') || lower.includes('نيون') || lower.includes('أصفر') || lower.includes('اصفر')) return 'Volt Neon';
+  if (lower.includes('لافندر') || lower.includes('خزامى') || lower.includes('بنفسجي')) return 'Lavender';
+  if (lower.includes('توتي') || lower.includes('بيري')) return 'Plum Berry';
   
-  if (!/[\u0600-\u06FF]/.test(name)) return name;
-  return 'Classic';
+  return trimmed;
 }

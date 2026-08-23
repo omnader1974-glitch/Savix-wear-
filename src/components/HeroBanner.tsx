@@ -1,88 +1,100 @@
 import React from 'react';
-import { ArrowLeft, ShieldCheck, Truck, RefreshCw, Award } from 'lucide-react';
-import { Category, StoreSettings } from '../types';
+import { ArrowRight, ShieldCheck, Truck, RotateCcw, Sparkles } from 'lucide-react';
+import { StoreSettings } from '../types';
 
 interface HeroBannerProps {
-  onShopNow: (cat?: Category) => void;
+  onShopNow: () => void;
+  onExploreSale: () => void;
   settings?: StoreSettings;
 }
 
-export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, settings }) => {
+export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onExploreSale, settings }) => {
   const badge = settings?.heroBadge || 'SAVIX SUMMER COLLECTION 2026';
-  const title = settings?.heroTitle || 'NEW COLLECTION';
+  const title = settings?.heroTitle || 'NEW STREETWEAR COLLECTION';
   const subtitle =
-    settings?.heroSubtitle ||
-    'تشكيلة الصيف والستريت وير الجديدة متوفرة الآن بأعلى معايير جودة القطن المصري وتصميمات عصرية جريئة تناسب أسلوبك اليومي.';
-  const bgImage =
+    settings?.heroSubtitle && !/[\u0600-\u06FF]/.test(settings.heroSubtitle)
+      ? settings.heroSubtitle
+      : 'Discover the latest urban streetwear essentials crafted from 100% premium Egyptian heavyweight cotton with clean minimalist aesthetics.';
+  const ctaText =
+    settings?.heroCtaText && !/[\u0600-\u06FF]/.test(settings.heroCtaText)
+      ? settings.heroCtaText
+      : 'SHOP COLLECTION NOW';
+  const heroImage =
     settings?.heroImage ||
     'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1600&q=80';
-  const ctaText = settings?.heroCtaText || 'تسوق التشكيلة الآن';
 
   return (
-    <div className="relative bg-neutral-950 text-white overflow-hidden">
-      {/* Dynamic Background */}
-      <div
-        className="absolute inset-0 z-0 opacity-40 mix-blend-luminosity bg-cover bg-center"
-        style={{ backgroundImage: `url('${bgImage}')` }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-black via-black/85 to-transparent z-0" />
+    <div className="relative bg-neutral-900 text-white overflow-hidden font-brand" dir="ltr">
+      {/* Background Image with Dark Overlay */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src={heroImage}
+          alt="Streetwear Lookbook"
+          className="w-full h-full object-cover object-center opacity-40 scale-105 transition-transform duration-1000"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-900/60 to-transparent" />
+      </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32 flex flex-col justify-center min-h-[560px]">
-        <div className="max-w-2xl text-right">
-          
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1 text-xs sm:text-sm font-bold text-neutral-200 mb-6 uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            {badge}
-          </div>
-
-          <h1 className="font-brand text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight text-white mb-4 leading-none">
-            {title}
-          </h1>
-
-          <p className="font-arabic text-base sm:text-xl text-neutral-300 mb-8 leading-relaxed font-normal">
-            {subtitle}
-          </p>
-
-          <div className="flex flex-wrap gap-4 items-center">
-            <button
-              id="hero-shop-btn"
-              onClick={() => onShopNow('all')}
-              className="bg-white text-black font-brand font-black text-sm uppercase tracking-wider px-8 py-4 hover:bg-neutral-200 transition-all flex items-center gap-3 shadow-lg active:scale-95 cursor-pointer"
-            >
-              <span>{ctaText}</span>
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => onShopNow('sale')}
-              className="bg-transparent border border-white/40 text-white font-arabic font-bold text-sm px-7 py-4 hover:bg-white/10 transition-colors backdrop-blur-sm cursor-pointer"
-            >
-              عروض وتخفيضات خاصة 🔥
-            </button>
-          </div>
-
-          {/* Guarantees */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-12 pt-8 border-t border-white/15 text-xs text-neutral-300 font-arabic">
-            <div className="flex items-center gap-2">
-              <Truck className="w-4 h-4 text-neutral-400 shrink-0" />
-              <span>شحن سريع لكل المحافظات</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Award className="w-4 h-4 text-neutral-400 shrink-0" />
-              <span>قطن مصري فاخر 100%</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-neutral-400 shrink-0" />
-              <span>معاينة قبل الاستلام</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-neutral-400 shrink-0" />
-              <span>استبدال واسترجاع 14 يوم</span>
-            </div>
-          </div>
-
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32 md:py-40 flex flex-col items-center text-center">
+        
+        {/* Top Tag / Badge */}
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-none bg-white/10 backdrop-blur-md border border-white/20 text-[11px] sm:text-xs tracking-[0.2em] uppercase font-semibold mb-6">
+          <Sparkles className="w-3.5 h-3.5 text-white" />
+          <span>{badge}</span>
         </div>
+
+        {/* Main Heading */}
+        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight uppercase max-w-4xl leading-tight">
+          {title}
+        </h1>
+
+        {/* Description */}
+        <p className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-neutral-300 max-w-2xl font-light leading-relaxed">
+          {subtitle}
+        </p>
+
+        {/* CTA Buttons */}
+        <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+          <button
+            onClick={onShopNow}
+            className="bg-white text-black hover:bg-neutral-200 font-bold px-8 py-4 text-xs sm:text-sm tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl cursor-pointer"
+          >
+            <span>{ctaText}</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={onExploreSale}
+            className="bg-transparent hover:bg-white/10 text-white border border-white/40 font-bold px-8 py-4 text-xs sm:text-sm tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>DISCOVER SALE & OFFERS 🔥</span>
+          </button>
+        </div>
+
+        {/* Feature Guarantees Strip */}
+        <div className="mt-14 sm:mt-20 pt-8 border-t border-white/15 grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-4xl text-neutral-300 text-xs">
+          <div className="flex items-center justify-center gap-2">
+            <Truck className="w-4 h-4 text-white shrink-0" />
+            <span className="font-medium">Fast Nationwide Delivery</span>
+          </div>
+
+          <div className="flex items-center justify-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-white shrink-0" />
+            <span className="font-medium">100% Premium Egyptian Cotton</span>
+          </div>
+
+          <div className="flex items-center justify-center gap-2">
+            <RotateCcw className="w-4 h-4 text-white shrink-0" />
+            <span className="font-medium">Inspect Before Delivery</span>
+          </div>
+
+          <div className="flex items-center justify-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-white shrink-0" />
+            <span className="font-medium">14-Day Easy Returns</span>
+          </div>
+        </div>
+
       </div>
     </div>
   );

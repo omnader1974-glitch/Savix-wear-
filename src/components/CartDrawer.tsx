@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
-import { X, Trash2, ShoppingBag, ArrowLeft, Check, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ArrowRight, Tag, ShieldCheck, Check } from 'lucide-react';
 import { CartItem, Coupon, StoreSettings } from '../types';
 import { VALID_COUPONS, FREE_SHIPPING_THRESHOLD } from '../data/products';
+import { getEnglishColorName } from '../lib/translations';
 
 interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   cart: CartItem[];
-  onUpdateQuantity: (id: string, qty: number) => void;
-  onRemoveItem: (id: string) => void;
+  onUpdateQuantity: (index: number, newQty: number) => void;
+  onRemoveItem: (index: number) => void;
+  onOpenCheckout: () => void;
   appliedCoupon: Coupon | null;
   onApplyCoupon: (coupon: Coupon | null) => void;
-  onProceedCheckout: () => void;
-  coupons?: Coupon[];
   settings?: StoreSettings;
+  coupons?: Coupon[];
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({
@@ -22,276 +23,309 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   cart,
   onUpdateQuantity,
   onRemoveItem,
+  onOpenCheckout,
   appliedCoupon,
   onApplyCoupon,
-  onProceedCheckout,
-  coupons = VALID_COUPONS,
   settings,
+  coupons = VALID_COUPONS,
 }) => {
   const [couponInput, setCouponInput] = useState('');
   const [couponError, setCouponError] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState('');
 
   if (!isOpen) return null;
 
-  const subtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+  const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
-  // Free shipping logic with dynamic settings
-  const freeThreshold = settings?.freeShippingThreshold !== undefined ? settings.freeShippingThreshold : FREE_SHIPPING_THRESHOLD;
-  const isFreeShipping = subtotal >= freeThreshold;
-  const remainingForFreeShipping = Math.max(0, freeThreshold - subtotal);
-  const progressPercentage = Math.min(100, Math.round((subtotal / (freeThreshold || 1)) * 100));
+  // Free shipping threshold logic
+  const threshold = settings?.freeShippingThreshold !== undefined ? settings.freeShippingThreshold : FREE_SHIPPING_THRESHOLD;
+  const progressToFreeShipping = Math.min(100, Math.round((subtotal / threshold) * 100));
+  const amountNeededForFreeShipping = Math.max(0, threshold - subtotal);
 
   // Discount calculation
-  let discount = 0;
+  let discountAmount = 0;
   if (appliedCoupon) {
     if (appliedCoupon.discountType === 'percentage') {
-      discount = Math.round((subtotal * appliedCoupon.value) / 100);
+      discountAmount = Math.round((subtotal * appliedCoupon.value) / 100);
     } else {
-      discount = Math.min(subtotal, appliedCoupon.value);
+      discountAmount = Math.min(subtotal, appliedCoupon.value);
     }
   }
+
+  const finalTotal = Math.max(0, subtotal - discountAmount);
 
   const handleApplyCoupon = (e: React.FormEvent) => {
     e.preventDefault();
     setCouponError('');
+    setCouponSuccess('');
+
     const code = couponInput.trim().toUpperCase();
-    if (!code) return;
-
-    // Search active coupons from database first
-    const activeCoupons = coupons.filter((c) => c.isActive !== false);
-    const matched = activeCoupons.find((c) => c.code.toUpperCase() === code);
-
-    if (matched) {
-      if (matched.minOrderAmount && subtotal < matched.minOrderAmount) {
-        setCouponError(`الحد الأدنى لاستخدام هذا الكوبون هو ${matched.minOrderAmount} ج.م`);
-        return;
-      }
-      onApplyCoupon(matched);
-      setCouponInput('');
-    } else {
-      setCouponError('كود الخصم غير صالح أو منتهي الصلاحية');
+    if (!code) {
+      setCouponError('Please enter a promo code');
+      return;
     }
+
+    const availableCoupons = coupons && coupons.length > 0 ? coupons : VALID_COUPONS;
+    const found = availableCoupons.find(
+      (c) => c.code.toUpperCase() === code && c.isActive !== false
+    );
+
+    if (!found) {
+      setCouponError('Invalid or expired promo code');
+      return;
+    }
+
+    const minAmount = found.minSpend || found.minOrderAmount;
+    if (minAmount && subtotal < minAmount) {
+      setCouponError(`Minimum order amount for this code is ${minAmount} EGP`);
+      return;
+    }
+
+    onApplyCoupon(found);
+    setCouponSuccess(`Coupon ${found.code} applied successfully!`);
+    setCouponInput('');
+  };
+
+  const handleRemoveCoupon = () => {
+    onApplyCoupon(null);
+    setCouponSuccess('');
+    setCouponError('');
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-start animate-fadeIn font-arabic">
-      <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between text-right">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end animate-fadeIn font-brand" dir="ltr">
+      <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between text-left animate-slideInRight">
         
-        {/* Drawer Header */}
-        <div className="p-4 sm:p-5 border-b border-neutral-200 flex items-center justify-between">
+        {/* Cart Header */}
+        <div className="p-4 sm:p-5 border-b border-neutral-200 flex items-center justify-between bg-neutral-50">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-black" />
-            <h2 className="font-bold text-lg text-neutral-900">
-              حقيبة التسوق ({cart.reduce((a, b) => a + b.quantity, 0)})
+            <h2 className="font-black text-base sm:text-lg text-neutral-900 uppercase tracking-wider">
+              Shopping Bag ({totalItemsCount})
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-neutral-500 hover:text-black hover:bg-neutral-100 rounded-full transition-colors cursor-pointer"
-            aria-label="إغلاق"
+            className="p-1.5 text-neutral-500 hover:text-black hover:bg-neutral-200 rounded-full transition-colors cursor-pointer"
+            aria-label="Close"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Free Shipping Meter */}
-        <div className="bg-neutral-50 p-4 border-b border-neutral-200">
-          <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-            {isFreeShipping ? (
-              <span className="text-emerald-700 flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" />
-                تهانينا! حصلت على شحن مجاني 🚚
-              </span>
-            ) : (
-              <span className="text-neutral-700">
-                أضف منتجات بقيمة <strong className="text-black">{remainingForFreeShipping} ج.م</strong> للحصول على شحن مجاني!
-              </span>
-            )}
-            <span className="text-neutral-500">{progressPercentage}%</span>
-          </div>
-          <div className="w-full h-2 bg-neutral-200 rounded-full overflow-hidden">
+        {/* Free Shipping Progress Indicator */}
+        <div className="bg-neutral-900 text-white p-3.5 text-xs font-medium space-y-2">
+          {amountNeededForFreeShipping === 0 ? (
+            <div className="flex items-center gap-2 text-emerald-400 font-bold">
+              <Check className="w-4 h-4 shrink-0" />
+              <span>Congratulations! You've unlocked FREE Shipping nationwide 🚚</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <span>Add <strong className="text-amber-400 font-bold">{amountNeededForFreeShipping} EGP</strong> more for Free Shipping!</span>
+              <span className="font-bold text-[11px] opacity-75">{progressToFreeShipping}%</span>
+            </div>
+          )}
+          <div className="w-full bg-neutral-800 h-1.5 overflow-hidden">
             <div
-              className={`h-full transition-all duration-500 ${isFreeShipping ? 'bg-emerald-600' : 'bg-black'}`}
-              style={{ width: `${progressPercentage}%` }}
+              className="bg-emerald-500 h-full transition-all duration-300"
+              style={{ width: `${progressToFreeShipping}%` }}
             />
           </div>
         </div>
 
-        {/* Cart Item List */}
+        {/* Cart Items List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {cart.length === 0 ? (
             <div className="text-center py-16 space-y-4">
               <div className="w-16 h-16 bg-neutral-100 text-neutral-400 rounded-full flex items-center justify-center mx-auto">
                 <ShoppingBag className="w-8 h-8" />
               </div>
-              <p className="text-neutral-600 font-bold text-base">حقيبة التسوق فارغة حالياً</p>
-              <p className="text-xs text-neutral-400 max-w-xs mx-auto">
-                تصفح تشكيلة الملابس العصرية واختر ما يناسبك الآن.
-              </p>
+              <div className="space-y-1">
+                <p className="text-neutral-900 font-bold text-base">Your shopping bag is empty</p>
+                <p className="text-xs text-neutral-500 max-w-xs mx-auto">
+                  Explore our latest streetwear collection and add your favorite pieces.
+                </p>
+              </div>
               <button
                 onClick={onClose}
-                className="mt-2 bg-black text-white px-6 py-2.5 text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
+                className="bg-black hover:bg-neutral-800 text-white text-xs font-bold py-3 px-6 uppercase tracking-wider transition-colors cursor-pointer"
               >
-                تصفح المنتجات
+                Explore Collection
               </button>
             </div>
           ) : (
-            cart.map((item) => (
-              <div
-                key={item.id}
-                className="flex gap-3 p-3 bg-neutral-50 border border-neutral-200 transition-all hover:border-neutral-300"
-              >
-                {/* Thumbnail */}
-                <div className="w-20 h-20 aspect-square bg-white shrink-0 overflow-hidden border border-neutral-200">
-                  <img
-                    src={item.product.images[0] || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80'}
-                    alt={item.product.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Details */}
-                <div className="flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-start gap-1">
-                      <h4 className="text-xs sm:text-sm font-bold text-neutral-900 line-clamp-1">
-                        {item.product.name}
-                      </h4>
-                      <button
-                        onClick={() => onRemoveItem(item.id)}
-                        className="text-neutral-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
-                        title="حذف"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs text-neutral-500 mt-1">
-                      <span>المقاس: <strong className="text-neutral-800 font-brand">{item.selectedSize}</strong></span>
-                      <span>•</span>
-                      <span>اللون: <strong className="text-neutral-800">{item.selectedColor}</strong></span>
-                    </div>
+            cart.map((item, index) => {
+              const displayName = item.product.nameEn || item.product.name;
+              const englishColor = getEnglishColorName(item.selectedColor);
+              return (
+                <div
+                  key={`${item.product.id}-${item.selectedColor}-${item.selectedSize}-${index}`}
+                  className="flex gap-3 p-3 bg-neutral-50 border border-neutral-200 transition-all hover:border-neutral-300"
+                >
+                  {/* Thumbnail */}
+                  <div className="w-20 h-20 aspect-square bg-white shrink-0 overflow-hidden border border-neutral-200 flex items-center justify-center p-1">
+                    <img
+                      src={item.product.images[0]}
+                      alt={displayName}
+                      className="w-full h-full object-contain"
+                    />
                   </div>
 
-                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-neutral-200/60">
-                    <div className="font-brand font-black text-sm text-black">
-                      {item.product.price * item.quantity} <span className="font-arabic text-xs font-bold">ج.م</span>
+                  {/* Details */}
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <h4 className="text-xs sm:text-sm font-bold text-neutral-900 line-clamp-1">
+                          {displayName}
+                        </h4>
+                        <button
+                          onClick={() => onRemoveItem(index)}
+                          className="text-neutral-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
+                          aria-label="Remove item"
+                          title="Remove item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="text-[11px] text-neutral-500 mt-0.5 space-x-2">
+                        <span>Color: <strong className="text-neutral-700">{englishColor}</strong></span>
+                        <span>•</span>
+                        <span>Size: <strong className="text-neutral-700">{item.selectedSize}</strong></span>
+                      </div>
                     </div>
 
-                    {/* Quantity controls */}
-                    <div className="flex items-center border border-neutral-300 bg-white">
-                      <button
-                        onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                        className="px-2 py-0.5 text-xs text-neutral-600 hover:bg-neutral-100 font-bold cursor-pointer"
-                      >
-                        -
-                      </button>
-                      <span className="px-2.5 py-0.5 text-xs font-bold min-w-[24px] text-center">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                        className="px-2 py-0.5 text-xs text-neutral-600 hover:bg-neutral-100 font-bold cursor-pointer"
-                      >
-                        +
-                      </button>
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-neutral-200/60">
+                      {/* Quantity Controller */}
+                      <div className="flex items-center border border-neutral-300 bg-white">
+                        <button
+                          onClick={() => onUpdateQuantity(index, item.quantity - 1)}
+                          className="px-2 py-0.5 text-neutral-600 hover:text-black font-bold text-xs cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <span className="px-2.5 py-0.5 text-xs font-bold text-black">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => onUpdateQuantity(index, item.quantity + 1)}
+                          className="px-2 py-0.5 text-neutral-600 hover:text-black font-bold text-xs cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      {/* Total for item */}
+                      <div className="font-black text-sm text-black">
+                        {item.product.price * item.quantity} <span className="text-xs font-bold text-neutral-500">EGP</span>
+                      </div>
                     </div>
                   </div>
-
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
-        {/* Footer & Checkout Action */}
+        {/* Cart Bottom Checkout Area */}
         {cart.length > 0 && (
-          <div className="p-4 sm:p-5 border-t border-neutral-200 bg-white space-y-3">
+          <div className="p-4 border-t border-neutral-200 bg-white space-y-4">
             
-            {/* Promo Code Form */}
-            <form onSubmit={handleApplyCoupon} className="space-y-1">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="كود الخصم (مثال: SAVIX10)"
-                  value={couponInput}
-                  onChange={(e) => setCouponInput(e.target.value)}
-                  className="flex-1 border border-neutral-300 px-3 py-2 text-xs focus:outline-none focus:border-black font-brand uppercase"
-                />
-                <button
-                  type="submit"
-                  className="bg-neutral-100 hover:bg-black hover:text-white text-neutral-800 text-xs font-bold px-4 py-2 transition-colors border border-neutral-300 cursor-pointer"
-                >
-                  تطبيق
-                </button>
-              </div>
-              {couponError && (
-                <div className="flex items-center gap-1 text-[11px] text-rose-600 mt-1">
-                  <AlertCircle className="w-3 h-3" />
-                  <span>{couponError}</span>
-                </div>
-              )}
-              {appliedCoupon && (
-                <div className="flex items-center justify-between text-[11px] text-emerald-700 bg-emerald-50 px-2 py-1 mt-1">
-                  <span className="flex items-center gap-1">
-                    <Check className="w-3 h-3" />
-                    تم تطبيق كود <strong>{appliedCoupon.code}</strong> ({appliedCoupon.description})
-                  </span>
+            {/* Promo Code Input */}
+            <div>
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+                  <div className="flex items-center gap-1.5">
+                    <Tag className="w-4 h-4 text-emerald-600" />
+                    <span>
+                      Promo Code <strong>{appliedCoupon.code}</strong> Applied (-{discountAmount} EGP)
+                    </span>
+                  </div>
                   <button
-                    type="button"
-                    onClick={() => onApplyCoupon(null)}
-                    className="text-rose-600 underline font-bold cursor-pointer"
+                    onClick={handleRemoveCoupon}
+                    className="text-rose-600 hover:text-rose-800 font-bold text-[11px] underline cursor-pointer"
                   >
-                    إلغاء
+                    Remove
                   </button>
                 </div>
+              ) : (
+                <form onSubmit={handleApplyCoupon} className="space-y-1">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Promo Code (e.g. SAVIX10)"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value)}
+                      className="flex-1 border border-neutral-300 px-3 py-2 text-xs uppercase font-brand tracking-wider focus:outline-none focus:border-black"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-black hover:bg-neutral-800 text-white px-4 py-2 text-xs font-bold uppercase transition-colors cursor-pointer"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {couponError && (
+                    <p className="text-[11px] text-rose-600 font-medium">{couponError}</p>
+                  )}
+                  {couponSuccess && (
+                    <p className="text-[11px] text-emerald-600 font-medium">{couponSuccess}</p>
+                  )}
+                </form>
               )}
-            </form>
+            </div>
 
-            {/* Price Calculations */}
-            <div className="space-y-1.5 text-xs text-neutral-600 pt-2 border-t border-neutral-100">
+            {/* Calculations Summary */}
+            <div className="space-y-1.5 text-xs text-neutral-600 border-t border-neutral-100 pt-3">
               <div className="flex justify-between">
-                <span>المجموع الفرعي:</span>
-                <span className="font-brand font-bold text-neutral-900">{subtotal} ج.م</span>
+                <span>Subtotal ({totalItemsCount} items):</span>
+                <span className="font-bold text-black">{subtotal} EGP</span>
               </div>
-              
+
               {appliedCoupon && (
                 <div className="flex justify-between text-emerald-700 font-bold">
-                  <span>الخصم المطبق:</span>
-                  <span className="font-brand">-{discount} ج.م</span>
+                  <span>Discount ({appliedCoupon.code}):</span>
+                  <span>-{discountAmount} EGP</span>
                 </div>
               )}
 
               <div className="flex justify-between">
-                <span>الشحن:</span>
-                <span className="font-bold text-neutral-900">
-                  {isFreeShipping ? (
-                    <span className="text-emerald-700">مجاني 🚚</span>
+                <span>Shipping:</span>
+                <span className="font-medium text-neutral-800">
+                  {subtotal >= threshold ? (
+                    <span className="text-emerald-700 font-bold">FREE 🚚</span>
                   ) : (
-                    'يحسب عند إتمام الطلب'
+                    'Calculated at checkout'
                   )}
                 </span>
               </div>
 
               <div className="flex justify-between text-base font-black text-black pt-2 border-t border-neutral-200">
-                <span>المجموع الكلي التقديري:</span>
-                <span className="font-brand text-lg">{Math.max(0, subtotal - discount)} ج.م</span>
+                <span>Estimated Total:</span>
+                <span className="text-lg">{finalTotal} EGP</span>
               </div>
             </div>
 
-            {/* Checkout Button */}
+            {/* Checkout Action Button */}
             <button
-              id="proceed-checkout-btn"
-              onClick={onProceedCheckout}
-              className="w-full bg-black text-white py-3.5 font-bold text-sm tracking-wider uppercase hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2 shadow-md active:scale-98 cursor-pointer"
+              onClick={() => {
+                onClose();
+                onOpenCheckout();
+              }}
+              className="w-full bg-black hover:bg-neutral-800 text-white py-4 font-bold text-xs sm:text-sm tracking-widest uppercase transition-all duration-150 flex items-center justify-center gap-2 shadow-lg cursor-pointer"
             >
-              <span>متابعة إتمام الطلب</span>
-              <ArrowLeft className="w-4 h-4" />
+              <span>Proceed to Checkout</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
 
-            <p className="text-center text-[11px] text-neutral-400">
-              الدفع عند الاستلام متاح مع حق المعاينة قبل الاستلام
-            </p>
+            {/* Trust Footer */}
+            <div className="flex items-center justify-center gap-2 text-[11px] text-neutral-500 pt-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Inspect items before payment • 14-day returns</span>
+            </div>
+
           </div>
         )}
 

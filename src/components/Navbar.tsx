@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Menu, Search, User, ShoppingBag, X, ChevronRight, Sparkles } from 'lucide-react';
 import { Category, CategoryItem, StoreSettings } from '../types';
+import { getEnglishCategoryName } from '../lib/translations';
 
 interface NavbarProps {
   activeCategory: Category;
@@ -50,44 +51,45 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const brandName = settings?.storeName || settings?.logoText || 'SAVIX';
   const announcement = settings?.announcementText;
+  const englishAnnouncement = announcement && !/[\u0600-\u06FF]/.test(announcement)
+    ? announcement
+    : 'FREE SHIPPING ON ORDERS OVER 1,000 EGP ACROSS EGYPT • PREVIEW BEFORE DELIVERY';
 
   return (
     <>
-      {/* Top Announcement Bar (if configured in settings) */}
-      {announcement && (
-        <div className="bg-black text-white text-[11px] sm:text-xs py-2 px-4 text-center font-arabic font-medium tracking-wide">
-          {announcement}
-        </div>
-      )}
+      {/* Top Announcement Bar */}
+      <div className="bg-black text-white text-[11px] sm:text-xs py-2 px-4 text-center font-brand font-medium tracking-wider uppercase">
+        {englishAnnouncement}
+      </div>
 
       <header
         id="main-website-header"
         dir="ltr"
-        className="sticky top-0 z-40 w-full bg-white border-b border-neutral-100/90 transition-all"
+        className="sticky top-0 z-40 w-full bg-white border-b border-neutral-100/90 transition-all font-brand"
       >
         <div className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between relative">
           
           {/* ================= LEFT GROUP ================= */}
           {/* Layout: Hamburger Menu → Search */}
           <div className="flex items-center gap-2 sm:gap-4 md:gap-5 z-10">
-            {/* 1. Hamburger Menu Icon (3 horizontal lines) */}
+            {/* 1. Hamburger Menu Icon */}
             <button
               id="header-hamburger-menu-btn"
               onClick={() => setDrawerOpen(true)}
               className="p-2 -ml-1 text-black hover:text-neutral-600 transition-colors focus:outline-none flex items-center justify-center cursor-pointer"
-              aria-label="القائمة"
-              title="القائمة"
+              aria-label="Menu"
+              title="Menu"
             >
               <Menu className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.25] text-black" />
             </button>
 
-            {/* 2. Search Icon (Magnifying glass) */}
+            {/* 2. Search Icon */}
             <button
               id="header-search-btn"
               onClick={onOpenSearch}
               className="p-2 text-black hover:text-neutral-600 transition-colors focus:outline-none flex items-center justify-center cursor-pointer"
-              aria-label="بحث"
-              title="بحث"
+              aria-label="Search"
+              title="Search"
             >
               <Search className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.25] text-black" />
             </button>
@@ -99,7 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               id="header-logo-btn"
               onClick={handleLogoClick}
               className="font-brand font-light text-lg sm:text-2xl md:text-3xl tracking-[0.22em] sm:tracking-[0.3em] uppercase text-black hover:opacity-75 transition-opacity select-none focus:outline-none whitespace-nowrap block cursor-pointer"
-              aria-label={`${brandName} الصفحة الرئيسية`}
+              aria-label={`${brandName} Home`}
             >
               {settings?.logoImage ? (
                 <img src={settings.logoImage} alt={brandName} className="h-8 sm:h-10 object-contain mx-auto" />
@@ -112,24 +114,24 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* ================= RIGHT GROUP ================= */}
           {/* Layout: Account → Shopping Bag */}
           <div className="flex items-center gap-2 sm:gap-4 md:gap-5 z-10">
-            {/* 3. User / Account Profile Outline Icon (Head & Shoulders) */}
+            {/* 3. User / Account Profile Icon */}
             <button
               id="header-account-btn"
               onClick={onOpenAccount}
               className="p-2 text-black hover:text-neutral-600 transition-colors focus:outline-none flex items-center justify-center cursor-pointer"
-              aria-label="الحساب"
-              title="حسابي"
+              aria-label="My Account"
+              title="My Account"
             >
               <User className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.25] text-black" />
             </button>
 
-            {/* 4. Shopping Bag / Cart Outline Icon */}
+            {/* 4. Shopping Bag / Cart Icon */}
             <button
               id="header-shopping-bag-btn"
               onClick={onOpenCart}
               className="p-2 -mr-1 text-black hover:text-neutral-600 transition-colors focus:outline-none flex items-center justify-center relative cursor-pointer"
-              aria-label="حقيبة التسوق"
-              title="حقيبة التسوق"
+              aria-label="Shopping Bag"
+              title="Shopping Bag"
             >
               <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.25] text-black" />
               {cartCount > 0 && (
@@ -145,7 +147,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* ================= SLIDE-OUT MENU DRAWER ================= */}
       {drawerOpen && (
-        <div className="fixed inset-0 z-50 flex" dir="rtl">
+        <div className="fixed inset-0 z-50 flex" dir="ltr">
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity animate-fadeIn"
@@ -153,7 +155,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           />
 
           {/* Drawer Content */}
-          <div className="relative w-full max-w-sm bg-white h-full shadow-2xl z-50 flex flex-col font-arabic animate-slideInRight">
+          <div className="relative w-full max-w-sm bg-white h-full shadow-2xl z-50 flex flex-col font-brand animate-slideInLeft">
             
             {/* Drawer Header */}
             <div className="flex items-center justify-between p-6 border-b border-neutral-100">
@@ -162,8 +164,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
               <button
                 onClick={() => setDrawerOpen(false)}
-                className="p-2 text-neutral-500 hover:text-black hover:bg-neutral-100 transition-colors"
-                aria-label="إغلاق القائمة"
+                className="p-2 text-neutral-500 hover:text-black hover:bg-neutral-100 transition-colors cursor-pointer"
+                aria-label="Close Menu"
               >
                 <X className="w-5 h-5 stroke-[1.5]" />
               </button>
@@ -172,51 +174,52 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Drawer Categories Navigation */}
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
               <div>
-                <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-3">
-                  الأقسام والتشكيلات
+                <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-widest mb-3">
+                  Collections & Categories
                 </p>
                 <div className="space-y-1">
                   {/* All products */}
                   <button
                     onClick={() => handleCategorySelect('all')}
-                    className={`w-full flex items-center justify-between py-3 px-3 text-right text-sm font-medium transition-colors ${
+                    className={`w-full flex items-center justify-between py-3 px-3 text-left text-sm font-medium transition-colors cursor-pointer ${
                       activeCategory === 'all'
                         ? 'bg-neutral-100 text-black font-bold'
                         : 'text-neutral-800 hover:bg-neutral-50'
                     }`}
                   >
-                    <span>جميع المنتجات</span>
-                    <ChevronRight className="w-4 h-4 text-neutral-400 rotate-180" />
+                    <span>All Products</span>
+                    <ChevronRight className="w-4 h-4 text-neutral-400" />
                   </button>
 
                   {/* New arrivals */}
                   <button
                     onClick={() => handleCategorySelect('new')}
-                    className={`w-full flex items-center justify-between py-3 px-3 text-right text-sm font-medium transition-colors ${
+                    className={`w-full flex items-center justify-between py-3 px-3 text-left text-sm font-medium transition-colors cursor-pointer ${
                       activeCategory === 'new'
                         ? 'bg-neutral-100 text-black font-bold'
                         : 'text-neutral-800 hover:bg-neutral-50'
                     }`}
                   >
-                    <span>وصل حديثاً ✨</span>
-                    <ChevronRight className="w-4 h-4 text-neutral-400 rotate-180" />
+                    <span>New Arrivals ✨</span>
+                    <ChevronRight className="w-4 h-4 text-neutral-400" />
                   </button>
 
                   {/* Dynamic Categories from database */}
                   {activeCategories.map((cat) => {
                     const isSelected = activeCategory === cat.slug;
+                    const displayName = cat.nameEn || getEnglishCategoryName(cat.name, cat.slug);
                     return (
                       <button
                         key={cat.id || cat.slug}
                         onClick={() => handleCategorySelect(cat.slug)}
-                        className={`w-full flex items-center justify-between py-3 px-3 text-right text-sm font-medium transition-colors ${
+                        className={`w-full flex items-center justify-between py-3 px-3 text-left text-sm font-medium transition-colors cursor-pointer ${
                           isSelected
                             ? 'bg-neutral-100 text-black font-bold'
                             : 'text-neutral-800 hover:bg-neutral-50'
                         }`}
                       >
-                        <span>{cat.name}</span>
-                        <ChevronRight className="w-4 h-4 text-neutral-400 rotate-180" />
+                        <span>{displayName}</span>
+                        <ChevronRight className="w-4 h-4 text-neutral-400" />
                       </button>
                     );
                   })}
@@ -224,14 +227,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {/* Sale */}
                   <button
                     onClick={() => handleCategorySelect('sale')}
-                    className={`w-full flex items-center justify-between py-3 px-3 text-right text-sm font-bold text-rose-600 transition-colors ${
+                    className={`w-full flex items-center justify-between py-3 px-3 text-left text-sm font-bold text-rose-600 transition-colors cursor-pointer ${
                       activeCategory === 'sale'
                         ? 'bg-rose-50 font-bold'
                         : 'hover:bg-rose-50/50'
                     }`}
                   >
-                    <span>عروض وتخفيضات 🔥</span>
-                    <ChevronRight className="w-4 h-4 text-rose-400 rotate-180" />
+                    <span>Sale & Special Offers 🔥</span>
+                    <ChevronRight className="w-4 h-4 text-rose-400" />
                   </button>
                 </div>
               </div>
@@ -243,10 +246,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     setDrawerOpen(false);
                     onOpenTracking();
                   }}
-                  className="w-full flex items-center justify-between py-2.5 px-3 hover:bg-neutral-50 transition-colors text-right"
+                  className="w-full flex items-center justify-between py-2.5 px-3 hover:bg-neutral-50 transition-colors text-left cursor-pointer"
                 >
-                  <span>📦 تتبع شحنتك وطلباتك</span>
-                  <ChevronRight className="w-4 h-4 text-neutral-400 rotate-180" />
+                  <span>📦 Track Your Order</span>
+                  <ChevronRight className="w-4 h-4 text-neutral-400" />
                 </button>
 
                 <button
@@ -254,10 +257,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     setDrawerOpen(false);
                     onOpenSizeGuide();
                   }}
-                  className="w-full flex items-center justify-between py-2.5 px-3 hover:bg-neutral-50 transition-colors text-right"
+                  className="w-full flex items-center justify-between py-2.5 px-3 hover:bg-neutral-50 transition-colors text-left cursor-pointer"
                 >
-                  <span>📏 جدول ودليل المقاسات</span>
-                  <ChevronRight className="w-4 h-4 text-neutral-400 rotate-180" />
+                  <span>📏 Size & Fit Guide</span>
+                  <ChevronRight className="w-4 h-4 text-neutral-400" />
                 </button>
 
                 <button
@@ -265,21 +268,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                     setDrawerOpen(false);
                     onOpenContact();
                   }}
-                  className="w-full flex items-center justify-between py-2.5 px-3 hover:bg-neutral-50 transition-colors text-right"
+                  className="w-full flex items-center justify-between py-2.5 px-3 hover:bg-neutral-50 transition-colors text-left cursor-pointer"
                 >
-                  <span>💬 تواصل معنا وخدمة العملاء</span>
-                  <ChevronRight className="w-4 h-4 text-neutral-400 rotate-180" />
+                  <span>💬 Customer Care & Support</span>
+                  <ChevronRight className="w-4 h-4 text-neutral-400" />
                 </button>
               </div>
 
               {/* Shopping Guarantee Highlight */}
               <div className="bg-neutral-50 p-4 border border-neutral-100 space-y-1 text-xs text-neutral-600">
-                <p className="font-bold text-black flex items-center gap-1.5">
+                <p className="font-bold text-black flex items-center gap-1.5 uppercase tracking-wide">
                   <Sparkles className="w-3.5 h-3.5 text-neutral-800" />
-                  تسوق بثقة مع {brandName}
+                  Shop with Confidence at {brandName}
                 </p>
                 <p className="leading-relaxed">
-                  معاينة المنتج قبل الاستلام متاحة لجميع المحافظات مع سياسة استبدال واسترجاع خلال 14 يوماً.
+                  Open inspection on delivery nationwide. 14-day hassle-free exchange & return guarantee.
                 </p>
               </div>
             </div>

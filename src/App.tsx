@@ -18,6 +18,7 @@ import { AdminLoginModal } from './components/AdminLoginModal';
 import { Footer } from './components/Footer';
 import { Toast, ToastMessage } from './components/Toast';
 import { PlusCircle, PackageOpen } from 'lucide-react';
+import { getEnglishCategoryName } from './lib/translations';
 import {
   subscribeProducts,
   subscribeCategories,
@@ -26,15 +27,6 @@ import {
   subscribeGovernorates,
   subscribeSettings,
   seedInitialDatabaseIfEmpty,
-  saveProduct,
-  deleteProduct,
-  saveCategory,
-  deleteCategory,
-  updateOrderStatus,
-  saveCoupon,
-  deleteCoupon,
-  saveGovernorate,
-  saveStoreSettings,
   DEFAULT_STORE_SETTINGS,
 } from './lib/db';
 
@@ -112,7 +104,6 @@ export default function App() {
 
   // Seed & Initialize Firestore subscriptions
   useEffect(() => {
-    // Seed initial structure if empty
     seedInitialDatabaseIfEmpty();
 
     const unsubProducts = subscribeProducts((items) => {
@@ -206,140 +197,23 @@ export default function App() {
     } else if (sortBy === 'rating') {
       list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     } else if (sortBy === 'featured') {
-      list.sort((a, b) => (b.isBestSeller ? 1 : 0) - (a.isBestSeller ? 1 : 0));
+      list.sort((a, b) => (b.isBestseller ? 1 : 0) - (a.isBestseller ? 1 : 0));
     }
 
     return list;
   }, [products, activeCategory, sortBy]);
 
-  // Product CRUD operations backed by Firestore
-  const handleAddProduct = async (newProduct: Product) => {
-    try {
-      await saveProduct(newProduct);
-      addToast('success', `تم نشر المنتج "${newProduct.name}" بنجاح في المتجر`);
-    } catch (e) {
-      console.error(e);
-      addToast('error', 'حدث خطأ أثناء حفظ المنتج');
-    }
-  };
-
-  const handleUpdateProduct = async (updated: Product) => {
-    try {
-      await saveProduct(updated);
-      addToast('success', `تم تحديث بيانات "${updated.name}" بنجاح`);
-    } catch (e) {
-      console.error(e);
-      addToast('error', 'حدث خطأ أثناء تحديث المنتج');
-    }
-  };
-
-  const handleDeleteProduct = async (productId: string) => {
-    try {
-      await deleteProduct(productId);
-      setCart((prev) => prev.filter((item) => item.product.id !== productId));
-      setWishlist((prev) => prev.filter((item) => item.id !== productId));
-      addToast('info', 'تم حذف المنتج من المتجر بنجاح');
-    } catch (e) {
-      console.error(e);
-      addToast('error', 'حدث خطأ أثناء حذف المنتج');
-    }
-  };
-
-  // Category CRUD operations backed by Firestore
-  const handleAddCategory = async (newCat: CategoryItem) => {
-    try {
-      await saveCategory(newCat);
-      addToast('success', `تمت إضافة قسم "${newCat.name}" بنجاح`);
-    } catch (e) {
-      console.error(e);
-      addToast('error', 'حدث خطأ أثناء إضافة القسم');
-    }
-  };
-
-  const handleUpdateCategory = async (cat: CategoryItem) => {
-    try {
-      await saveCategory(cat);
-      addToast('success', `تم تعديل قسم "${cat.name}" بنجاح`);
-    } catch (e) {
-      console.error(e);
-      addToast('error', 'حدث خطأ أثناء تعديل القسم');
-    }
-  };
-
-  const handleDeleteCategory = async (catId: string) => {
-    try {
-      await deleteCategory(catId);
-      addToast('info', 'تم حذف القسم بنجاح');
-    } catch (e) {
-      console.error(e);
-      addToast('error', 'حدث خطأ أثناء حذف القسم');
-    }
-  };
-
-  // Order status update backed by Firestore
-  const handleUpdateOrderStatus = async (orderId: string, status: OrderData['status']) => {
-    try {
-      await updateOrderStatus(orderId, status);
-      addToast('success', `تم تحديث حالة الطلب إلى "${status}"`);
-    } catch (e) {
-      console.error(e);
-      addToast('error', 'حدث خطأ أثناء تحديث حالة الطلب');
-    }
-  };
-
-  // Coupon CRUD operations backed by Firestore
-  const handleAddCoupon = async (coupon: Coupon) => {
-    try {
-      await saveCoupon(coupon);
-      addToast('success', `تم حفظ كود الخصم "${coupon.code}" بنجاح`);
-    } catch (e) {
-      console.error(e);
-      addToast('error', 'حدث خطأ أثناء حفظ كود الخصم');
-    }
-  };
-
-  const handleDeleteCoupon = async (couponId: string) => {
-    try {
-      await deleteCoupon(couponId);
-      addToast('info', 'تم حذف كود الخصم بنجاح');
-    } catch (e) {
-      console.error(e);
-      addToast('error', 'حدث خطأ أثناء حذف الكود');
-    }
-  };
-
-  // Governorate update backed by Firestore
-  const handleUpdateGovernorates = async (govs: Governorate[]) => {
-    try {
-      for (const g of govs) {
-        await saveGovernorate(g);
-      }
-      addToast('success', 'تم حفظ أسعار ومناطق الشحن بنجاح');
-    } catch (e) {
-      console.error(e);
-      addToast('error', 'حدث خطأ أثناء حفظ مناطق الشحن');
-    }
-  };
-
-  // Settings update backed by Firestore
-  const handleUpdateSettings = async (st: StoreSettings) => {
-    try {
-      await saveStoreSettings(st);
-      addToast('success', 'تم حفظ جميع إعدادات ومحتوى المتجر بنجاح');
-    } catch (e) {
-      console.error(e);
-      addToast('error', 'حدث خطأ أثناء حفظ الإعدادات');
-    }
-  };
-
   // Cart operations
-  const handleAddToCart = (product: Product, size: string, color: string, qty: number = 1) => {
+  const handleAddToCart = (product: Product, color: string, size: string, qty: number = 1) => {
+    const displayName = product.nameEn || product.name;
     const itemKey = `${product.id}-${color}-${size}`;
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === itemKey);
+      const existing = prev.find((item) => item.product.id === product.id && item.selectedColor === color && item.selectedSize === size);
       if (existing) {
         return prev.map((item) =>
-          item.id === itemKey ? { ...item, quantity: item.quantity + qty } : item
+          item.product.id === product.id && item.selectedColor === color && item.selectedSize === size
+            ? { ...item, quantity: item.quantity + qty }
+            : item
         );
       }
       return [
@@ -354,44 +228,53 @@ export default function App() {
       ];
     });
 
-    addToast('success', `تمت إضافة "${product.name}" (${size}) إلى حقيبة التسوق`);
+    addToast('success', `"${displayName}" (${size}) added to your shopping bag`);
   };
 
-  const handleUpdateQuantity = (id: string, qty: number) => {
-    if (qty <= 0) {
-      handleRemoveFromCart(id);
+  const handleUpdateQuantity = (index: number, newQty: number) => {
+    if (newQty <= 0) {
+      handleRemoveFromCart(index);
       return;
     }
     setCart((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, quantity: qty } : item))
+      prev.map((item, idx) => (idx === index ? { ...item, quantity: newQty } : item))
     );
   };
 
-  const handleRemoveFromCart = (id: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
-    addToast('info', 'تم حذف المنتج من حقيبة التسوق');
+  const handleRemoveFromCart = (index: number) => {
+    setCart((prev) => prev.filter((_, idx) => idx !== index));
+    addToast('info', 'Item removed from shopping bag');
   };
 
   // Wishlist operations
   const handleToggleWishlist = (product: Product) => {
+    const displayName = product.nameEn || product.name;
     const exists = wishlist.some((p) => p.id === product.id);
     if (exists) {
       setWishlist((prev) => prev.filter((p) => p.id !== product.id));
-      addToast('info', `تمت إزالة "${product.name}" من قائمة الرغبات`);
+      addToast('info', `"${displayName}" removed from wishlist`);
     } else {
       setWishlist((prev) => [...prev, product]);
-      addToast('success', `تمت إضافة "${product.name}" إلى قائمة الرغبات`);
+      addToast('success', `"${displayName}" added to wishlist`);
     }
   };
 
   const handleOrderCompleted = (order: OrderData) => {
     setCart([]);
     setAppliedCoupon(null);
-    addToast('success', `تم استلام طلبك بنجاح برقم ${order.orderNumber}`);
+    addToast('success', `Order placed successfully! Reference: ${order.orderNumber}`);
   };
 
-  const handleShopNow = (cat: Category = 'all') => {
-    setActiveCategory(cat);
+  const handleShopNow = () => {
+    setActiveCategory('all');
+    const el = document.getElementById('products-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleExploreSale = () => {
+    setActiveCategory('sale');
     const el = document.getElementById('products-section');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
@@ -404,15 +287,17 @@ export default function App() {
   const activeCategoryObj = categories.find((c) => c.slug === activeCategory);
   const activeCategoryTitle =
     activeCategory === 'all'
-      ? 'الأكثر مبيعاً والتشكيلة الكاملة'
+      ? 'All Products & Drops'
       : activeCategory === 'new'
-      ? 'أحدث القطع المضافة حديثاً ✨'
+      ? 'New Arrivals ✨'
       : activeCategory === 'sale'
-      ? 'عروض وخصومات التصفية الخاصة 🔥'
-      : activeCategoryObj?.name || 'التشكيلة المختارة';
+      ? 'Special Offers & Clearance 🔥'
+      : activeCategoryObj
+      ? (activeCategoryObj.nameEn || getEnglishCategoryName(activeCategoryObj.name, activeCategoryObj.slug))
+      : 'Curated Collection';
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900 flex flex-col font-arabic">
+    <div className="min-h-screen bg-white text-neutral-900 flex flex-col font-brand selection:bg-black selection:text-white" dir="ltr">
       
       {/* Navigation Header */}
       <Navbar
@@ -430,29 +315,31 @@ export default function App() {
       />
 
       {/* Hero Banner Section */}
-      <HeroBanner onShopNow={handleShopNow} settings={settings} />
+      <HeroBanner
+        onShopNow={handleShopNow}
+        onExploreSale={handleExploreSale}
+        settings={settings}
+      />
 
       {/* Filter / Category Bar */}
-      <div id="products-section">
-        <CategoryFilter
-          activeCategory={activeCategory}
-          onSelectCategory={setActiveCategory}
-          productsCount={filteredProducts.length}
-          sortBy={sortBy}
-          onSelectSort={setSortBy}
-          categories={categories}
-        />
-      </div>
+      <CategoryFilter
+        activeCategory={activeCategory}
+        onSelectCategory={setActiveCategory}
+        totalProductsCount={filteredProducts.length}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        categories={categories}
+      />
 
       {/* Main Product Catalog Grid */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-1 w-full">
+      <main id="products-section" className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-10 sm:py-12 flex-1 w-full font-brand">
         
         {/* Section Heading */}
         <div className="text-center mb-10">
-          <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest block mb-1 font-brand">
+          <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest block mb-1">
             {settings?.storeName || 'SAVIX'} STREETWEAR
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black text-black uppercase tracking-tight">
             {activeCategoryTitle}
           </h2>
           <div className="w-12 h-0.5 bg-black mx-auto mt-3" />
@@ -465,34 +352,28 @@ export default function App() {
               <PackageOpen className="w-7 h-7 stroke-[1.25]" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-neutral-900">لا توجد منتجات مضافة حالياً</h3>
+              <h3 className="text-lg font-bold text-neutral-900">No Products Available Currently</h3>
               <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed">
-                قسم المنتجات فارغ تماماً. يمكنك الآن إضافة منتجاتك الخاصة، تصنيفاتها، صورها، وأسعارها عبر لوحة التحكم بكل سهولة.
+                The product catalog is currently empty. You can add new products, categories, photos, and prices from the Admin Dashboard.
               </p>
             </div>
             <button
               onClick={handleOpenAdminSettings}
-              className="inline-flex items-center gap-2 bg-black text-white px-7 py-3 text-xs font-bold hover:bg-neutral-800 transition-colors uppercase tracking-wider font-brand shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-2 bg-black text-white px-7 py-3 text-xs font-bold hover:bg-neutral-800 transition-colors uppercase tracking-wider shadow-sm cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>إضافة منتج من لوحة التحكم</span>
+              <span>Add Products from Dashboard</span>
             </button>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-16 bg-neutral-50 border border-neutral-200 p-8 space-y-4 max-w-xl mx-auto">
-            <p className="text-base font-bold text-neutral-800">لا توجد منتجات مطابقة لهذا التصنيف حالياً</p>
+            <p className="text-base font-bold text-neutral-800">No products found matching this category</p>
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setActiveCategory('all')}
-                className="bg-black text-white px-5 py-2 text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
+                className="bg-black text-white px-5 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-neutral-800 transition-colors cursor-pointer"
               >
-                عرض كل المنتجات ({products.length})
-              </button>
-              <button
-                onClick={handleOpenAdminSettings}
-                className="bg-white border border-neutral-300 text-neutral-800 px-5 py-2 text-xs font-bold hover:border-black transition-colors cursor-pointer"
-              >
-                إضافة منتج لهذا القسم
+                View All Products ({products.length})
               </button>
             </div>
           </div>
@@ -502,8 +383,7 @@ export default function App() {
               <ProductCard
                 key={product.id}
                 product={product}
-                onQuickView={(p) => setSelectedProduct(p)}
-                onAddToCart={(p, size, col) => handleAddToCart(p, size, col, 1)}
+                onOpenProductModal={(p) => setSelectedProduct(p)}
                 isWishlisted={wishlist.some((w) => w.id === product.id)}
                 onToggleWishlist={handleToggleWishlist}
               />
@@ -527,6 +407,7 @@ export default function App() {
       {/* Modals and Drawers */}
       <ProductModal
         product={selectedProduct}
+        isOpen={Boolean(selectedProduct)}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={handleAddToCart}
         isWishlisted={selectedProduct ? wishlist.some((w) => w.id === selectedProduct.id) : false}
@@ -543,9 +424,9 @@ export default function App() {
         appliedCoupon={appliedCoupon}
         onApplyCoupon={(c) => {
           setAppliedCoupon(c);
-          if (c) addToast('success', `تم تطبيق كود الخصم ${c.code}`);
+          if (c) addToast('success', `Coupon code ${c.code} applied successfully!`);
         }}
-        onProceedCheckout={() => {
+        onOpenCheckout={() => {
           setIsCartOpen(false);
           setIsCheckoutOpen(true);
         }}
@@ -604,12 +485,14 @@ export default function App() {
         settings={settings}
       />
 
+      {/* Admin Login Modal (Arabic) */}
       <AdminLoginModal
         isOpen={isAdminLoginOpen}
         onClose={() => setIsAdminLoginOpen(false)}
         onLoginSuccess={handleAdminLoginSuccess}
       />
 
+      {/* Admin Dashboard (Arabic) */}
       <DashboardModal
         isOpen={isDashboardOpen && isAdminAuthenticated}
         onClose={() => setIsDashboardOpen(false)}

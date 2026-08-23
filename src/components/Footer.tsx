@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, Instagram, Facebook, MessageCircle, ShieldCheck, Truck, RotateCcw } from 'lucide-react';
 import { Category, CategoryItem, StoreSettings } from '../types';
+import { getEnglishCategoryName } from '../lib/translations';
 
 interface FooterProps {
   onSelectCategory: (cat: Category) => void;
@@ -26,12 +27,16 @@ export const Footer: React.FC<FooterProps> = ({
 
   const brandName = settings?.storeName || 'SAVIX';
   const aboutText =
-    settings?.aboutText ||
-    'علامة تجارية رائدة متخصصة في تقديم أحدث صيحات الملابس العصرية وأزياء الستريت وير بأعلى معايير جودة القطن المصري وتصميمات مينيمال أنيقة.';
+    settings?.aboutText && !/[\u0600-\u06FF]/.test(settings.aboutText)
+      ? settings.aboutText
+      : 'A leading streetwear fashion brand committed to high-standard Egyptian combed cotton, minimalist design aesthetics, and modern oversized silhouettes.';
   const instagram = settings?.instagramUrl || 'https://instagram.com';
   const facebook = settings?.facebookUrl || 'https://facebook.com';
   const whatsapp = settings?.whatsappNumber ? `https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, '')}` : 'https://wa.me/201000000000';
-  const footerCopy = settings?.footerCopy || `© 2026 ${brandName} Apparel Inc. جميع الحقوق محفوظة.`;
+  const footerCopy =
+    settings?.footerCopy && !/[\u0600-\u06FF]/.test(settings.footerCopy)
+      ? settings.footerCopy
+      : `© 2026 ${brandName} Apparel Inc. All rights reserved.`;
 
   const activeCategories = categories.filter((c) => c.isActive !== false);
 
@@ -46,7 +51,7 @@ export const Footer: React.FC<FooterProps> = ({
   };
 
   return (
-    <footer className="bg-white border-t border-neutral-200 mt-20 pt-16 pb-8 font-arabic text-right">
+    <footer className="bg-white border-t border-neutral-200 mt-20 pt-16 pb-8 font-brand text-left" dir="ltr">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Trust Badges Bar */}
@@ -56,8 +61,8 @@ export const Footer: React.FC<FooterProps> = ({
               <Truck className="w-5 h-5 text-black" />
             </div>
             <div>
-              <h5 className="font-bold text-sm text-black">شحن سريع لكافة المحافظات</h5>
-              <p className="text-xs text-neutral-500">توصيل سريع مع إمكانية المعاينة قبل الاستلام</p>
+              <h5 className="font-bold text-sm text-black">Fast Nationwide Delivery</h5>
+              <p className="text-xs text-neutral-500">Express delivery with right of inspection before payment</p>
             </div>
           </div>
 
@@ -66,8 +71,8 @@ export const Footer: React.FC<FooterProps> = ({
               <RotateCcw className="w-5 h-5 text-black" />
             </div>
             <div>
-              <h5 className="font-bold text-sm text-black">استبدال واسترجاع مرن</h5>
-              <p className="text-xs text-neutral-500">فترة استبدال واسترجاع خلال 14 يوماً</p>
+              <h5 className="font-bold text-sm text-black">14-Day Easy Returns</h5>
+              <p className="text-xs text-neutral-500">Hassle-free exchange and return policy</p>
             </div>
           </div>
 
@@ -76,8 +81,8 @@ export const Footer: React.FC<FooterProps> = ({
               <ShieldCheck className="w-5 h-5 text-black" />
             </div>
             <div>
-              <h5 className="font-bold text-sm text-black">100% قطن مصري فاخر</h5>
-              <p className="text-xs text-neutral-500">أعلى مواصفات الغزل والصباغة المقاومة للبهتان</p>
+              <h5 className="font-bold text-sm text-black">100% Egyptian Combed Cotton</h5>
+              <p className="text-xs text-neutral-500">Premium heavyweight yarns engineered for durability</p>
             </div>
           </div>
         </div>
@@ -87,7 +92,7 @@ export const Footer: React.FC<FooterProps> = ({
           
           {/* Brand Col */}
           <div className="space-y-4">
-            <h4 className="font-brand font-light text-2xl tracking-[0.25em] text-black uppercase">
+            <h4 className="font-light text-2xl tracking-[0.25em] text-black uppercase">
               {brandName}
             </h4>
             <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
@@ -127,41 +132,44 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Quick Links */}
           <div className="space-y-3">
             <h4 className="font-bold text-xs sm:text-sm text-black uppercase tracking-wider">
-              الأقسام والتشكيلات
+              Collections
             </h4>
             <ul className="space-y-2 text-xs sm:text-sm text-neutral-600">
               <li>
                 <button
                   onClick={() => onSelectCategory('all')}
-                  className="hover:text-black transition-colors"
+                  className="hover:text-black transition-colors cursor-pointer"
                 >
-                  جميع المنتجات
+                  All Products
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => onSelectCategory('new')}
-                  className="hover:text-black transition-colors"
+                  className="hover:text-black transition-colors cursor-pointer"
                 >
-                  وصل حديثاً ✨
+                  New Arrivals ✨
                 </button>
               </li>
-              {activeCategories.slice(0, 4).map((cat) => (
-                <li key={cat.id || cat.slug}>
-                  <button
-                    onClick={() => onSelectCategory(cat.slug)}
-                    className="hover:text-black transition-colors"
-                  >
-                    {cat.name}
-                  </button>
-                </li>
-              ))}
+              {activeCategories.slice(0, 4).map((cat) => {
+                const displayName = cat.nameEn || getEnglishCategoryName(cat.name, cat.slug);
+                return (
+                  <li key={cat.id || cat.slug}>
+                    <button
+                      onClick={() => onSelectCategory(cat.slug)}
+                      className="hover:text-black transition-colors cursor-pointer"
+                    >
+                      {displayName}
+                    </button>
+                  </li>
+                );
+              })}
               <li>
                 <button
                   onClick={() => onSelectCategory('sale')}
-                  className="hover:text-rose-600 font-bold transition-colors"
+                  className="hover:text-rose-600 font-bold transition-colors cursor-pointer"
                 >
-                  عروض وتخفيضات خاصة 🔥
+                  Sale & Offers 🔥
                 </button>
               </li>
             </ul>
@@ -170,39 +178,39 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Customer Care */}
           <div className="space-y-3">
             <h4 className="font-bold text-xs sm:text-sm text-black uppercase tracking-wider">
-              خدمة العملاء
+              Customer Care
             </h4>
             <ul className="space-y-2 text-xs sm:text-sm text-neutral-600">
               <li>
                 <button
                   onClick={onOpenTracking}
-                  className="hover:text-black transition-colors flex items-center gap-1.5"
+                  className="hover:text-black transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span>تتبع شحنتك وطلبك</span>
+                  <span>Track Your Order</span>
                 </button>
               </li>
               <li>
                 <button
                   onClick={onOpenSizeGuide}
-                  className="hover:text-black transition-colors"
+                  className="hover:text-black transition-colors cursor-pointer"
                 >
-                  جدول ودليل المقاسات
+                  Size & Fit Guide
                 </button>
               </li>
               <li>
                 <button
                   onClick={onOpenContact}
-                  className="hover:text-black transition-colors"
+                  className="hover:text-black transition-colors cursor-pointer"
                 >
-                  سياسة الاستبدال والاسترجاع
+                  Exchange & Return Policy
                 </button>
               </li>
               <li>
                 <button
                   onClick={onOpenContact}
-                  className="hover:text-black transition-colors"
+                  className="hover:text-black transition-colors cursor-pointer"
                 >
-                  اتصل بنا وخدمة الدعم
+                  Contact & Support
                 </button>
               </li>
             </ul>
@@ -211,16 +219,15 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Newsletter */}
           <div className="space-y-3">
             <h4 className="font-bold text-xs sm:text-sm text-black uppercase tracking-wider">
-              النشرة البريدية
+              Newsletter
             </h4>
             <p className="text-xs text-neutral-500 leading-relaxed">
-              اشترك للحصول على كوبونات حصرية وعروض الخصم المبكرة وأحدث الكولكشنات.
+              Subscribe to get exclusive early drops, promo codes, and private seasonal sales.
             </p>
             <form onSubmit={handleNewsletter} className="space-y-2">
               <div className="flex">
                 <input
                   type="email"
-                  dir="ltr"
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -228,15 +235,15 @@ export const Footer: React.FC<FooterProps> = ({
                 />
                 <button
                   type="submit"
-                  className="bg-black hover:bg-neutral-800 text-white text-xs font-bold px-3 shrink-0 transition-colors cursor-pointer"
+                  className="bg-black hover:bg-neutral-800 text-white text-xs font-bold px-3 shrink-0 uppercase tracking-wider transition-colors cursor-pointer"
                 >
-                  اشتراك
+                  Join
                 </button>
               </div>
               {subscribed && (
                 <div className="text-[11px] text-emerald-700 flex items-center gap-1">
                   <Check className="w-3.5 h-3.5" />
-                  <span>شكراً لاشتراكك في القائمة البريدية!</span>
+                  <span>Thank you for subscribing!</span>
                 </div>
               )}
             </form>
@@ -248,18 +255,18 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="pt-8 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-500 gap-4">
           <div>{footerCopy}</div>
           <div className="flex items-center gap-4 flex-wrap">
-            <span>صُنع بحب في مصر 🇪🇬</span>
+            <span>Crafted with pride in Egypt 🇪🇬</span>
             <span>•</span>
             <button onClick={onOpenContact} className="hover:text-black transition-colors cursor-pointer">
-              الشروط والأحكام
+              Terms & Conditions
             </button>
             <span>•</span>
             <button
               onClick={onOpenAdminLogin}
               className="hover:text-black transition-colors cursor-pointer text-neutral-500"
-              title="الإعدادات"
+              title="Dashboard"
             >
-              الإعدادات
+              Management Portal
             </button>
           </div>
         </div>

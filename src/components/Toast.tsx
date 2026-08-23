@@ -16,7 +16,7 @@ export const Toast: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-5 left-5 z-50 flex flex-col gap-2 max-w-sm w-full font-arabic pointer-events-none">
+    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full font-brand pointer-events-none" dir="ltr">
       {toasts.map((toast) => (
         <div
           key={toast.id}
@@ -37,7 +37,7 @@ export const Toast: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
 
           <button
             onClick={() => onDismiss(toast.id)}
-            className="text-neutral-400 hover:text-white p-1"
+            className="text-neutral-400 hover:text-white p-1 cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>

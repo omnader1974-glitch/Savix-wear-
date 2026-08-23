@@ -1,268 +1,296 @@
 import React, { useState } from 'react';
-import { X, Heart, Star, Check, ShoppingBag, Ruler, Truck, ShieldAlert, Sparkles } from 'lucide-react';
+import { X, Star, Check, Truck, ShieldCheck, RotateCcw, Ruler, ShoppingBag, Heart } from 'lucide-react';
 import { Product } from '../types';
+import { getEnglishColorName } from '../lib/translations';
 
 interface ProductModalProps {
   product: Product | null;
+  isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (product: Product, size: string, color: string, qty: number) => void;
-  isWishlisted: boolean;
-  onToggleWishlist: (product: Product) => void;
+  onAddToCart: (product: Product, selectedColor: string, selectedSize: string, quantity: number) => void;
   onOpenSizeGuide: () => void;
+  isWishlisted?: boolean;
+  onToggleWishlist?: (product: Product) => void;
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({
   product,
+  isOpen,
   onClose,
   onAddToCart,
-  isWishlisted,
-  onToggleWishlist,
   onOpenSizeGuide,
+  isWishlisted = false,
+  onToggleWishlist,
 }) => {
-  const [selectedImage, setSelectedImage] = useState<number>(0);
-  const [selectedColor, setSelectedColor] = useState<string>('');
-  const [selectedSize, setSelectedSize] = useState<string>('L');
-  const [quantity, setQuantity] = useState<number>(1);
-  const [addedAnimation, setAddedAnimation] = useState(false);
+  if (!isOpen || !product) return null;
 
-  React.useEffect(() => {
-    if (product) {
-      setSelectedImage(0);
-      setSelectedColor(product.colors?.[0]?.name || '');
-      setSelectedSize(product.sizes?.[0] || 'L');
-      setQuantity(1);
-    }
-  }, [product]);
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedColor, setSelectedColor] = useState(product.colors[0]?.name || 'Standard');
+  const [selectedSize, setSelectedSize] = useState(product.sizes[0] || 'L');
+  const [quantity, setQuantity] = useState(1);
+  const [isAdded, setIsAdded] = useState(false);
 
-  if (!product) return null;
+  const hasDiscount = product.originalPrice && product.originalPrice > product.price;
+  const discountPercent = hasDiscount
+    ? Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100)
+    : 0;
 
-  const handleAdd = () => {
-    onAddToCart(product, selectedSize, selectedColor, quantity);
-    setAddedAnimation(true);
-    setTimeout(() => setAddedAnimation(false), 1500);
+  const handleAddToCart = () => {
+    onAddToCart(product, selectedColor, selectedSize, quantity);
+    setIsAdded(true);
+    setTimeout(() => {
+      setIsAdded(false);
+      onClose();
+    }, 900);
   };
 
+  const displayName = product.nameEn || product.name;
+  const englishColorDisplay = getEnglishColorName(selectedColor);
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn font-brand" dir="ltr">
       <div className="relative bg-white w-full max-w-4xl shadow-2xl overflow-hidden my-auto border border-neutral-200">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 left-4 z-20 p-2 text-neutral-500 hover:text-black bg-white/90 hover:bg-neutral-100 rounded-full transition-colors"
-          aria-label="إغلاق"
+          className="absolute top-4 right-4 z-20 p-2 bg-white/90 hover:bg-black hover:text-white rounded-full transition-all duration-200 shadow-xs cursor-pointer"
+          aria-label="Close"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-2">
           
-          {/* Images Section */}
+          {/* Product Gallery */}
           <div className="p-4 sm:p-6 bg-neutral-50 flex flex-col justify-between">
-            {/* Main Stage Image - 1:1 Square */}
-            <div className="relative aspect-square w-full bg-white overflow-hidden border border-neutral-200 mb-3">
+            {/* Main Preview Image */}
+            <div className="relative aspect-square w-full bg-white overflow-hidden border border-neutral-200 flex items-center justify-center p-4">
               <img
                 src={product.images[selectedImage] || product.images[0]}
-                alt={product.name}
-                className="w-full h-full object-cover object-center"
+                alt={displayName}
+                className="max-h-full max-w-full w-full h-full object-contain object-center"
               />
-              {product.originalPrice && product.originalPrice > product.price && (
-                <div className="absolute top-3 right-3 bg-rose-600 text-white text-xs font-bold px-2.5 py-1">
-                  خصم {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
-                </div>
+
+              {hasDiscount && (
+                <span className="absolute top-3 left-3 bg-rose-600 text-white text-xs font-black px-2.5 py-1 uppercase tracking-widest">
+                  SAVE {discountPercent}%
+                </span>
               )}
             </div>
 
-            {/* Thumbnails */}
+            {/* Thumbnail Selectors */}
             {product.images.length > 1 && (
-              <div className="flex gap-2 justify-center flex-wrap">
+              <div className="flex gap-2.5 mt-4 overflow-x-auto pb-1">
                 {product.images.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImage(idx)}
-                    className={`w-14 h-14 sm:w-16 sm:h-16 aspect-square border-2 overflow-hidden transition-all cursor-pointer ${
-                      selectedImage === idx ? 'border-black' : 'border-transparent opacity-60 hover:opacity-100'
+                    className={`w-16 h-16 aspect-square bg-white shrink-0 overflow-hidden border-2 transition-all cursor-pointer flex items-center justify-center p-1 ${
+                      selectedImage === idx ? 'border-black opacity-100' : 'border-neutral-200 opacity-60 hover:opacity-90'
                     }`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <img src={img} alt={`${displayName} ${idx + 1}`} className="w-full h-full object-contain" />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Details Section */}
-          <div className="p-6 sm:p-8 flex flex-col text-right font-arabic max-h-[85vh] overflow-y-auto">
+          {/* Product Purchasing Controls */}
+          <div className="p-6 sm:p-8 flex flex-col justify-between space-y-6 max-h-[85vh] overflow-y-auto">
             
-            {/* Header */}
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-xs font-bold text-neutral-500 uppercase tracking-widest font-brand">
-                SAVIX OFFICIAL
-              </span>
-              <button
-                onClick={() => onToggleWishlist(product)}
-                className={`p-2 rounded-full transition-colors ${
-                  isWishlisted ? 'text-rose-600 bg-rose-50' : 'text-neutral-400 hover:text-black'
-                }`}
-                title="إضافة للمفضلة"
-              >
-                <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-rose-600' : ''}`} />
-              </button>
-            </div>
-
-            <h2 className="text-xl sm:text-2xl font-black text-neutral-900 mb-2">
-              {product.name}
-            </h2>
-
-            {/* Rating */}
-            <div className="flex items-center gap-2 mb-4 text-xs">
-              <div className="flex text-amber-400">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-amber-400" />
-                ))}
-              </div>
-              <span className="font-bold text-neutral-800">{product.rating}</span>
-              <span className="text-neutral-400">({product.reviewsCount} تقييم معتمد)</span>
-            </div>
-
-            {/* Price */}
-            <div className="flex items-baseline gap-3 mb-6 p-3 bg-neutral-50 border border-neutral-100">
-              <span className="text-2xl sm:text-3xl font-black font-brand text-black">
-                {product.price} <span className="text-sm font-arabic font-bold">ج.م</span>
-              </span>
-              {product.originalPrice && product.originalPrice > product.price && (
-                <span className="text-sm text-neutral-400 line-through">
-                  {product.originalPrice} ج.م
+            <div>
+              {/* Brand & Category */}
+              <div className="flex items-center justify-between text-xs text-neutral-400 mb-1">
+                <span className="font-semibold uppercase tracking-widest text-neutral-500">
+                  {product.fitType || 'Oversized Fit'}
                 </span>
-              )}
-              <span className="text-xs text-emerald-700 font-bold mr-auto bg-emerald-50 px-2 py-1">
-                متوفر في المخزون
-              </span>
-            </div>
-
-            {/* Color selection */}
-            <div className="mb-5">
-              <div className="flex justify-between items-center text-xs font-bold text-neutral-700 mb-2">
-                <span>اللون المختار: <strong className="text-black">{selectedColor}</strong></span>
-              </div>
-              <div className="flex gap-2">
-                {product.colors.map((color) => {
-                  const isSelected = selectedColor === color.name;
-                  return (
-                    <button
-                      key={color.name}
-                      onClick={() => setSelectedColor(color.name)}
-                      className={`flex items-center gap-2 px-3 py-1.5 border text-xs font-bold transition-all ${
-                        isSelected
-                          ? 'border-black bg-black text-white shadow-xs'
-                          : 'border-neutral-200 text-neutral-700 hover:border-neutral-400'
-                      }`}
-                    >
-                      <span
-                        className="w-3.5 h-3.5 rounded-full border border-neutral-300 shrink-0"
-                        style={{ backgroundColor: color.hex }}
-                      />
-                      <span>{color.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Size selection */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center text-xs font-bold text-neutral-700 mb-2">
-                <span>المقاس: <strong className="text-black">{selectedSize}</strong></span>
-                <button
-                  onClick={onOpenSizeGuide}
-                  className="text-neutral-500 hover:text-black flex items-center gap-1 underline"
-                >
-                  <Ruler className="w-3.5 h-3.5" />
-                  <span>دليل المقاسات</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                {product.sizes.map((size) => {
-                  const isSelected = selectedSize === size;
-                  return (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`py-2.5 text-center text-sm font-brand font-bold transition-all ${
-                        isSelected
-                          ? 'bg-black text-white border-black'
-                          : 'bg-white border border-neutral-200 text-neutral-800 hover:border-black'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Quantity */}
-            <div className="flex items-center gap-4 mb-6">
-              <span className="text-xs font-bold text-neutral-700">الكمية:</span>
-              <div className="flex items-center border border-neutral-300">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-3 py-1.5 hover:bg-neutral-100 text-neutral-700 font-bold"
-                >
-                  -
-                </button>
-                <span className="px-4 py-1.5 text-sm font-bold text-center min-w-[36px]">
-                  {quantity}
+                <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 font-bold text-[11px]">
+                  In Stock • Ready to Ship
                 </span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="px-3 py-1.5 hover:bg-neutral-100 text-neutral-700 font-bold"
-                >
-                  +
-                </button>
               </div>
-            </div>
 
-            {/* CTA Buttons */}
-            <div className="space-y-2 mb-6">
-              <button
-                id="add-to-cart-modal-btn"
-                onClick={handleAdd}
-                className={`w-full py-4 text-center font-bold text-sm tracking-wider uppercase transition-all flex items-center justify-center gap-2 ${
-                  addedAnimation
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-black text-white hover:bg-neutral-800 shadow-md active:scale-98'
-                }`}
-              >
-                {addedAnimation ? (
-                  <>
-                    <Check className="w-5 h-5" />
-                    <span>تمت الإضافة إلى السلة بنجاح!</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>أضف إلى حقيبة التسوق ({product.price * quantity} ج.م)</span>
-                  </>
-                )}
-              </button>
-            </div>
+              {/* Title */}
+              <h2 className="text-xl sm:text-2xl font-black text-neutral-900 leading-tight">
+                {displayName}
+              </h2>
 
-            {/* Description and Fabric Specs */}
-            <div className="border-t border-neutral-100 pt-4 space-y-3 text-xs text-neutral-600">
-              <div>
-                <strong className="text-black block mb-1">وصف المنتج:</strong>
-                <p className="leading-relaxed">{product.description}</p>
-              </div>
-              <div className="bg-neutral-50 p-3 border border-neutral-100 rounded-none space-y-1.5">
-                <div className="flex items-center gap-2 text-neutral-800 font-bold">
-                  <Sparkles className="w-3.5 h-3.5 text-neutral-600" />
-                  <span>مواصفات الخامة: {product.fabricSpecs}</span>
+              {/* Rating & Reviews */}
+              <div className="flex items-center gap-2 mt-2">
+                <div className="flex text-amber-400">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-amber-400" />
+                  ))}
                 </div>
-                <div className="flex items-center gap-2 text-neutral-700">
-                  <Truck className="w-3.5 h-3.5 text-neutral-600" />
-                  <span>التوصيل خلال 1 - 3 أيام عمل مع إمكانية المعاينة قبل الدفع</span>
+                <span className="text-xs text-neutral-500 font-medium">
+                  ({product.reviewsCount || 18} verified customer reviews)
+                </span>
+              </div>
+
+              {/* Price */}
+              <div className="mt-4 flex items-baseline gap-3 pb-4 border-b border-neutral-100">
+                <span className="text-2xl sm:text-3xl font-black text-black">
+                  {product.price} <span className="text-sm font-bold text-neutral-600">EGP</span>
+                </span>
+                {hasDiscount && (
+                  <span className="text-sm text-neutral-400 line-through">
+                    {product.originalPrice} EGP
+                  </span>
+                )}
+              </div>
+
+              {/* Color Selection */}
+              <div className="mt-5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                    Color: <span className="text-neutral-500 font-medium">{englishColorDisplay}</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {product.colors.map((c) => (
+                    <button
+                      key={c.name}
+                      onClick={() => setSelectedColor(c.name)}
+                      className={`relative w-8 h-8 rounded-full border transition-all flex items-center justify-center cursor-pointer ${
+                        selectedColor === c.name ? 'ring-2 ring-black ring-offset-2 scale-110' : 'border-neutral-300'
+                      }`}
+                      style={{ backgroundColor: c.hex || (c as any).code }}
+                      title={getEnglishColorName(c.name)}
+                    >
+                      {selectedColor === c.name && (
+                        <Check className={`w-3.5 h-3.5 ${['#FFFFFF', '#F5F5F0', '#E5E5E5'].includes(c.hex || (c as any).code) ? 'text-black' : 'text-white'}`} />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Size Selection */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                    Size: <span className="text-neutral-500 font-medium">{selectedSize}</span>
+                  </span>
+                  <button
+                    onClick={onOpenSizeGuide}
+                    className="text-xs text-neutral-800 hover:text-black font-semibold flex items-center gap-1 underline underline-offset-4 cursor-pointer"
+                  >
+                    <Ruler className="w-3.5 h-3.5" />
+                    <span>Size Guide</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-5 gap-2">
+                  {product.sizes.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setSelectedSize(s)}
+                      className={`py-2.5 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+                        selectedSize === s
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-neutral-800 border-neutral-300 hover:border-black'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quantity */}
+              <div className="mt-6 flex items-center gap-4">
+                <span className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                  Quantity:
+                </span>
+                <div className="flex items-center border border-neutral-300">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-3 py-1.5 text-neutral-600 hover:text-black hover:bg-neutral-100 text-sm font-bold cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <span className="px-4 py-1.5 text-xs font-bold text-black min-w-[2.5rem] text-center">
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="px-3 py-1.5 text-neutral-600 hover:text-black hover:bg-neutral-100 text-sm font-bold cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Product Description */}
+              <div className="mt-6 text-xs text-neutral-600 space-y-2 border-t border-neutral-100 pt-4">
+                <h4 className="font-bold text-neutral-900 uppercase tracking-wider text-xs">
+                  Product Overview:
+                </h4>
+                <p className="leading-relaxed">
+                  {product.description && !/[\u0600-\u06FF]/.test(product.description)
+                    ? product.description
+                    : 'Crafted with premium heavyweight Egyptian combed cotton. Designed with an authentic relaxed streetwear cut, drop shoulders, and durable reinforced stitching for daily comfort.'}
+                </p>
+                {product.fabric && (
+                  <p className="font-medium text-neutral-800">
+                    Fabric: <span className="text-neutral-600">{product.fabric}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Actions & Guarantees */}
+            <div className="space-y-4 pt-2">
+              <div className="flex gap-3">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isAdded}
+                  className={`flex-1 py-4 px-6 font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 shadow-md cursor-pointer ${
+                    isAdded
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-black hover:bg-neutral-800 text-white'
+                  }`}
+                >
+                  {isAdded ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Added to Bag Successfully!</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>Add to Bag • {product.price * quantity} EGP</span>
+                    </>
+                  )}
+                </button>
+
+                {onToggleWishlist && (
+                  <button
+                    onClick={() => onToggleWishlist(product)}
+                    className={`p-4 border border-neutral-300 hover:border-black transition-colors flex items-center justify-center cursor-pointer ${
+                      isWishlisted ? 'bg-rose-50 text-rose-600 border-rose-300' : 'text-neutral-600'
+                    }`}
+                    title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                  >
+                    <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-rose-600' : ''}`} />
+                  </button>
+                )}
+              </div>
+
+              {/* Guarantees List */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-neutral-500 pt-2 border-t border-neutral-100">
+                <div className="flex items-center gap-1.5">
+                  <Truck className="w-3.5 h-3.5 text-neutral-800 shrink-0" />
+                  <span>1 - 3 Days Delivery</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-neutral-800 shrink-0" />
+                  <span>Inspect Before Payment</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <RotateCcw className="w-3.5 h-3.5 text-neutral-800 shrink-0" />
+                  <span>14-Day Returns</span>
                 </div>
               </div>
             </div>
@@ -270,6 +298,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           </div>
 
         </div>
+
       </div>
     </div>
   );

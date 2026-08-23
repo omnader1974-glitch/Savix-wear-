@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, MessageCircle, Phone, Clock, Mail, ShieldCheck, Send, Check } from 'lucide-react';
+import { X, MessageCircle, Mail, ShieldCheck, Send, Check } from 'lucide-react';
 import { StoreSettings } from '../types';
 
 interface ContactModalProps {
@@ -18,10 +18,11 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, set
 
   const brandName = settings?.storeName || 'SAVIX';
   const whatsappNumber = settings?.whatsappNumber?.replace(/[^0-9]/g, '') || '201000000000';
-  const supportEmail = settings?.email || 'support@savix.store';
+  const supportEmail = settings?.email || 'support@savixstore.com';
   const returnPolicy =
-    settings?.refundPolicy ||
-    'معاينة المنتج قبل الاستلام متاحة لجميع المحافظات. يحق لك استبدال أو استرجاع المنتج خلال 14 يوماً من تاريخ الاستلام في حالته الأصلية.';
+    settings?.refundPolicy && !/[\u0600-\u06FF]/.test(settings.refundPolicy)
+      ? settings.refundPolicy
+      : 'Full inspection before payment is allowed across all governorates in Egypt. You have 14 days from delivery to request a hassle-free return or size exchange in original unworn condition with tags attached.';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,19 +38,19 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, set
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn font-arabic">
-      <div className="relative bg-white w-full max-w-2xl shadow-2xl overflow-hidden my-auto border border-neutral-200 text-right">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn font-brand" dir="ltr">
+      <div className="relative bg-white w-full max-w-2xl shadow-2xl overflow-hidden my-auto border border-neutral-200 text-left">
         
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-neutral-200 flex items-center justify-between bg-neutral-50">
-          <h2 className="font-bold text-lg text-neutral-900 flex items-center gap-2">
+          <h2 className="font-bold text-base sm:text-lg text-neutral-900 flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-emerald-600" />
-            <span>تواصل مع خدمة عملاء {brandName}</span>
+            <span>Contact {brandName} Customer Care</span>
           </h2>
           <button
             onClick={onClose}
             className="p-1.5 text-neutral-500 hover:text-black hover:bg-neutral-200 rounded-full transition-colors cursor-pointer"
-            aria-label="إغلاق"
+            aria-label="Close"
           >
             <X className="w-6 h-6" />
           </button>
@@ -61,7 +62,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, set
           {/* Quick WhatsApp & Support Channels */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a
-              href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`مرحباً ${brandName}، عندي استفسار بخصوص المنتجات`)}`}
+              href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hello ${brandName}, I have an inquiry regarding your products.`)}`}
               target="_blank"
               rel="noreferrer"
               className="p-4 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-3"
@@ -70,8 +71,8 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, set
                 <MessageCircle className="w-5 h-5" />
               </div>
               <div>
-                <span className="block font-bold text-xs text-emerald-950">محادثة واتساب مباشرة</span>
-                <span className="text-[11px] text-emerald-700">رد فوري ومتابعة على مدار الساعة</span>
+                <span className="block font-bold text-xs text-emerald-950">Direct WhatsApp Chat</span>
+                <span className="text-[11px] text-emerald-700">Instant assistance & support</span>
               </div>
             </a>
 
@@ -80,17 +81,17 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, set
                 <Mail className="w-5 h-5" />
               </div>
               <div>
-                <span className="block font-bold text-xs text-neutral-900">البريد الإلكتروني للدعم</span>
-                <span className="text-[11px] text-neutral-600 font-brand">{supportEmail}</span>
+                <span className="block font-bold text-xs text-neutral-900">Email Support</span>
+                <span className="text-[11px] text-neutral-600 font-medium">{supportEmail}</span>
               </div>
             </div>
           </div>
 
           {/* Guarantees Box */}
           <div className="bg-neutral-50 p-4 border border-neutral-200 space-y-2 text-xs text-neutral-700">
-            <h4 className="font-bold text-black flex items-center gap-1.5">
+            <h4 className="font-bold text-black flex items-center gap-1.5 uppercase tracking-wide">
               <ShieldCheck className="w-4 h-4 text-black" />
-              <span>سياسة الاستبدال والاسترجاع والضمان:</span>
+              <span>Exchange, Return & Quality Policy:</span>
             </h4>
             <p className="leading-relaxed text-neutral-600">
               {returnPolicy}
@@ -99,14 +100,14 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, set
 
           {/* Send direct message */}
           <form onSubmit={handleSubmit} className="space-y-3">
-            <h4 className="font-bold text-xs text-black border-b border-neutral-200 pb-1">
-              أو اترك لنا رسالة وسنعاود الاتصال بك:
+            <h4 className="font-bold text-xs text-black border-b border-neutral-200 pb-1 uppercase tracking-wide">
+              Send us a direct message:
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input
                 type="text"
-                placeholder="الاسم"
+                placeholder="Your Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -114,7 +115,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, set
               />
               <input
                 type="tel"
-                placeholder="رقم الهاتف"
+                placeholder="Phone Number"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
@@ -124,7 +125,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, set
 
             <textarea
               rows={3}
-              placeholder="اكتب استفسارك أو طلبك بالتفصيل..."
+              placeholder="Type your inquiry, size question, or request..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               required
@@ -134,7 +135,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, set
             <button
               type="submit"
               disabled={sent}
-              className={`w-full py-3 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              className={`w-full py-3 text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 sent
                   ? 'bg-emerald-600 text-white'
                   : 'bg-black hover:bg-neutral-800 text-white shadow-xs'
@@ -143,12 +144,12 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, set
               {sent ? (
                 <>
                   <Check className="w-4 h-4" />
-                  <span>تم إرسال رسالتك بنجاح، شكراً لتواصلك!</span>
+                  <span>Message Sent Successfully! Thank you.</span>
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  <span>إرسال الرسالة</span>
+                  <span>Send Message</span>
                 </>
               )}
             </button>

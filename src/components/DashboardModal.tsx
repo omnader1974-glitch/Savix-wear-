@@ -1483,7 +1483,10 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
 
                           <div className="pt-2 flex items-center gap-2 md:justify-end">
                             <a
-                              href={`https://wa.me/2${o.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                              href={`https://wa.me/${(() => {
+                                const digits = o.phone.replace(/[^0-9]/g, '');
+                                return digits.startsWith('01') ? `20${digits.substring(1)}` : digits;
+                              })()}?text=${encodeURIComponent(
                                 `مرحباً ${o.customerName}، نتواصل معك بخصوص طلبك من متجر SAVIX برقم: ${o.orderNumber}`
                               )}`}
                               target="_blank"
@@ -1570,7 +1573,10 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                           <td className="p-3 font-bold text-black font-brand">{c.totalSpent.toLocaleString()} ج.م</td>
                           <td className="p-3">
                             <a
-                              href={`https://wa.me/2${c.phone.replace(/[^0-9]/g, '')}`}
+                              href={`https://wa.me/${(() => {
+                                const digits = c.phone.replace(/[^0-9]/g, '');
+                                return digits.startsWith('01') ? `20${digits.substring(1)}` : digits;
+                              })()}`}
                               target="_blank"
                               rel="noreferrer"
                               className="text-emerald-600 hover:text-emerald-700 font-bold inline-flex items-center gap-1"

@@ -28,12 +28,18 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
     const q = searchQuery.trim().toLowerCase();
     if (!q) return;
 
-    const found = savedOrders.find(
-      (o) =>
-        o.orderNumber.toLowerCase() === q ||
-        o.phone.includes(q) ||
-        (o.altPhone && o.altPhone.includes(q))
-    );
+    const cleanedDigits = q.replace(/[^0-9]/g, '');
+
+    const found = savedOrders.find((o) => {
+      const matchOrderNum = o.orderNumber.toLowerCase() === q;
+      const orderPhoneDigits = (o.phone || '').replace(/[^0-9]/g, '');
+      const orderAltDigits = (o.altPhone || '').replace(/[^0-9]/g, '');
+
+      const matchPhoneExact = o.phone.toLowerCase().includes(q);
+      const matchPhoneDigits = cleanedDigits.length >= 4 && (orderPhoneDigits.includes(cleanedDigits) || orderAltDigits.includes(cleanedDigits));
+
+      return matchOrderNum || matchPhoneExact || matchPhoneDigits;
+    });
 
     if (found) {
       setMatchedOrder(found);

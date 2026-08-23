@@ -4,6 +4,8 @@ import { CartItem, Coupon, Governorate, OrderData, StoreSettings } from '../type
 import { GOVERNORATES, FREE_SHIPPING_THRESHOLD } from '../data/products';
 import { saveOrder } from '../lib/db';
 import { getEnglishGovernorateName, getEnglishDeliveryDays } from '../lib/translations';
+import { PhoneInputWithCountry } from './PhoneInputWithCountry';
+import { CountryCode, DEFAULT_COUNTRY, formatFullPhoneNumber, validatePhoneNumber } from '../data/countryCodes';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -25,7 +27,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   settings,
 }) => {
   const [customerName, setCustomerName] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(DEFAULT_COUNTRY);
   const [phone, setPhone] = useState('');
+  const [selectedAltCountry, setSelectedAltCountry] = useState<CountryCode>(DEFAULT_COUNTRY);
   const [altPhone, setAltPhone] = useState('');
   const [selectedGovId, setSelectedGovId] = useState(governorates[0]?.id || 'cairo');
   const [cityArea, setCityArea] = useState('');
@@ -64,9 +68,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     if (!customerName.trim()) {
       errs.customerName = 'Please enter your full name';
     }
-    if (!phone.trim() || phone.trim().length < 11) {
-      errs.phone = 'Please enter a valid 11-digit phone number (e.g. 01012345678)';
+
+    // Country-aware phone validation
+    const phoneValidation = validatePhoneNumber(selectedCountry, phone);
+    if (!phoneValidation.isValid) {
+      errs.phone = phoneValidation.message || 'Please enter a valid phone number';
     }
+
+    if (altPhone.trim()) {
+      const altValidation = validatePhoneNumber(selectedAltCountry, altPhone);
+      if (!altValidation.isValid) {
+        errs.altPhone = altValidation.message || 'Please enter a valid alternative phone number';
+      }
+    }
+
     if (!cityArea.trim()) {
       errs.cityArea = 'Please enter your city, district or area';
     }
@@ -83,12 +98,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     setIsSubmitting(true);
 
+    const formattedPrimaryPhone = formatFullPhoneNumber(selectedCountry, phone);
+    const formattedAltPhone = altPhone.trim() ? formatFullPhoneNumber(selectedAltCountry, altPhone) : '';
+
     const orderNum = `SVX-${Math.floor(100000 + Math.random() * 900000)}`;
     const newOrder: OrderData = {
       orderNumber: orderNum,
       customerName: customerName.trim(),
-      phone: phone.trim(),
-      altPhone: altPhone.trim(),
+      phone: formattedPrimaryPhone,
+      altPhone: formattedAltPhone,
       governorate: englishGovName,
       cityArea: cityArea.trim(),
       detailedAddress: detailedAddress.trim(),
@@ -179,7 +197,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 Your order reference number is: <strong className="text-black font-brand text-base">{confirmedOrder.orderNumber}</strong>
               </p>
               <p className="text-xs text-neutral-500 mt-1">
-                Our customer care team will contact you at <strong className="text-black">{confirmedOrder.phone}</strong> to coordinate delivery.
+                Our customer care team will contact you at <strong className="text-black font-mono">{confirmedOrder.phone}</strong> to coordinate delivery.
               </p>
             </div>
 
@@ -193,6 +211,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <span>Recipient:</span>
                 <span className="font-bold">{confirmedOrder.customerName}</span>
               </div>
+              <div className="flex justify-between">
+                <span>Phone:</span>
+                <span className="font-bold font-mono text-neutral-900">{confirmedOrder.phone}</span>
+              </div>
+              {confirmedOrder.altPhone && (
+                <div className="flex justify-between">
+                  <span>Alt Phone:</span>
+                  <span className="font-medium font-mono text-neutral-700">{confirmedOrder.altPhone}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span>Delivery Address:</span>
                 <span className="font-medium text-neutral-700">{confirmedOrder.governorate} - {confirmedOrder.cityArea}</span>
@@ -256,34 +284,28 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   )}
                 </div>
 
+                {/* Country Code & Phone Number Field */}
                 <div>
-                  <label className="block text-xs font-bold text-neutral-700 mb-1">
-                    Mobile Phone Number <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="01012345678"
+                  <PhoneInputWithCountry
+                    label="Mobile Phone Number"
+                    required
+                    selectedCountry={selectedCountry}
+                    onCountryChange={setSelectedCountry}
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className={`w-full border px-3 py-2.5 text-xs focus:outline-none focus:border-black ${
-                      errors.phone ? 'border-rose-500 bg-rose-50' : 'border-neutral-300'
-                    }`}
+                    onChange={setPhone}
+                    error={errors.phone}
                   />
-                  {errors.phone && (
-                    <span className="text-[11px] text-rose-600 block mt-1">{errors.phone}</span>
-                  )}
                 </div>
 
+                {/* Alternative Phone with Country Code */}
                 <div>
-                  <label className="block text-xs font-bold text-neutral-700 mb-1">
-                    Alternative Phone / WhatsApp (Optional)
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="01187654321"
+                  <PhoneInputWithCountry
+                    label="Alternative Phone / WhatsApp (Optional)"
+                    selectedCountry={selectedAltCountry}
+                    onCountryChange={setSelectedAltCountry}
                     value={altPhone}
-                    onChange={(e) => setAltPhone(e.target.value)}
-                    className="w-full border border-neutral-300 px-3 py-2.5 text-xs focus:outline-none focus:border-black"
+                    onChange={setAltPhone}
+                    error={errors.altPhone}
                   />
                 </div>
 

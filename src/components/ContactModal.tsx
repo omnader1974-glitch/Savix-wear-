@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, MessageCircle, Mail, ShieldCheck, Send, Check } from 'lucide-react';
 import { StoreSettings } from '../types';
+import { PhoneInputWithCountry } from './PhoneInputWithCountry';
+import { CountryCode, DEFAULT_COUNTRY, formatFullPhoneNumber } from '../data/countryCodes';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -11,6 +13,7 @@ interface ContactModalProps {
 export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, settings }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(DEFAULT_COUNTRY);
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
 
@@ -105,22 +108,28 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, set
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                type="text"
-                placeholder="Your Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="border border-neutral-300 px-3 py-2 text-xs focus:outline-none focus:border-black"
-              />
-              <input
-                type="tel"
-                placeholder="Phone Number"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                className="border border-neutral-300 px-3 py-2 text-xs focus:outline-none focus:border-black"
-              />
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Your Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ahmed Ali"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full border border-neutral-300 px-3 py-2.5 text-xs focus:outline-none focus:border-black"
+                />
+              </div>
+
+              <div>
+                <PhoneInputWithCountry
+                  label="Phone Number"
+                  required
+                  selectedCountry={selectedCountry}
+                  onCountryChange={setSelectedCountry}
+                  value={phone}
+                  onChange={setPhone}
+                />
+              </div>
             </div>
 
             <textarea

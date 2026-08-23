@@ -104,6 +104,17 @@ export default function App() {
 
   // Seed & Initialize Firestore subscriptions
   useEffect(() => {
+    document.title = 'Savix Wear';
+    
+    // Ensure favicon is present
+    let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = 'https://i.postimg.cc/RhjL4SLc/1787481499943.png';
+
     seedInitialDatabaseIfEmpty();
 
     const unsubProducts = subscribeProducts((items) => {

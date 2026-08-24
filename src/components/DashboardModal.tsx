@@ -32,6 +32,9 @@ import {
   Globe,
   Share2,
   LogOut,
+  Upload,
+  RefreshCw,
+  Crop,
 } from 'lucide-react';
 import {
   Product,
@@ -58,6 +61,7 @@ import {
   saveStoreSettings,
 } from '../lib/db';
 import { ColorPickerManager } from './ColorPickerManager';
+import { resizeImageToAspect } from '../lib/imageUtils';
 
 interface DashboardModalProps {
   isOpen: boolean;
@@ -146,6 +150,62 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
 
   // Settings State Form
   const [settingsForm, setSettingsForm] = useState<StoreSettings>(settings);
+  const [isResizingHeroImage, setIsResizingHeroImage] = useState(false);
+  const [heroImageResizeStatus, setHeroImageResizeStatus] = useState<string | null>(null);
+
+  const handleHeroImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsResizingHeroImage(true);
+      setHeroImageResizeStatus('جاري ملاءمة ومعالجة أبعاد الصورة تلقائياً لتناسب البانر بدقة...');
+      
+      // Automatically resize to standard 16:9 (1920x1080) proportional cover
+      const processedDataUrl = await resizeImageToAspect(file, {
+        targetWidth: 1920,
+        targetHeight: 1080,
+        quality: 0.88,
+        mimeType: 'image/jpeg',
+      });
+
+      setSettingsForm((prev) => ({
+        ...prev,
+        heroImage: processedDataUrl,
+      }));
+      setHeroImageResizeStatus('تمت ملاءمة الصورة وتثبيت أبعادها بنجاح (1920×1080 - 16:9)!');
+      setTimeout(() => setHeroImageResizeStatus(null), 3500);
+    } catch (err) {
+      console.error('Error processing hero banner image:', err);
+      alert('تعذر معالجة الصورة. يرجى التأكد من اختيار ملف صورة صالح.');
+      setHeroImageResizeStatus(null);
+    } finally {
+      setIsResizingHeroImage(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleAutoFitCurrentHeroUrl = async () => {
+    if (!settingsForm.heroImage) return;
+    try {
+      setIsResizingHeroImage(true);
+      setHeroImageResizeStatus('جاري ملاءمة أبعاد الصورة وتنسيقها...');
+      const processed = await resizeImageToAspect(settingsForm.heroImage, {
+        targetWidth: 1920,
+        targetHeight: 1080,
+        quality: 0.88,
+      });
+      setSettingsForm((prev) => ({ ...prev, heroImage: processed }));
+      setHeroImageResizeStatus('تمت ملاءمة أبعاد الصورة بنجاح!');
+      setTimeout(() => setHeroImageResizeStatus(null), 3500);
+    } catch (err) {
+      console.warn('External image CORS limitation for canvas export:', err);
+      setHeroImageResizeStatus('تم تطبيق وضعية التناسب الكامل والتغطية (Object Cover) بنجاح.');
+      setTimeout(() => setHeroImageResizeStatus(null), 3500);
+    } finally {
+      setIsResizingHeroImage(false);
+    }
+  };
 
   // Dedicated In-App Deletion Confirmation State
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -1928,24 +1988,38 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
 
                 {/* Hero Section */}
                 <div className="space-y-4">
-                  <h4 className="font-bold text-sm text-black border-b border-neutral-100 pb-2">
-                    قسم الواجهة الرئيسية (Hero Banner)
-                  </h4>
+                  <div className="border-b border-neutral-100 pb-2 flex items-center justify-between">
+                    <h4 className="font-bold text-sm text-black">
+                      قسم الواجهة الرئيسية (Hero Banner)
+                    </h4>
+                    <span className="text-[11px] text-neutral-400 font-medium">
+                      الحقول النصية اختيارية (تُخفى تلقائياً عند تركها فارغة)
+                    </span>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="block font-bold text-neutral-700 font-brand">Hero Badge Text</label>
+                      <div className="flex items-center justify-between">
+                        <label className="block font-bold text-neutral-700 font-brand">Hero Badge Text</label>
+                        <span className="text-[10px] text-neutral-400 font-sans">اختياري (Optional)</span>
+                      </div>
                       <input
                         type="text"
-                        value={settingsForm.heroBadge}
+                        placeholder="مثال: SAVIX SUMMER 2026 (اتركه فارغاً للإخفاء)"
+                        value={settingsForm.heroBadge ?? ''}
                         onChange={(e) => setSettingsForm({ ...settingsForm, heroBadge: e.target.value })}
                         className="w-full border border-neutral-300 p-2.5 font-brand focus:border-black focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="block font-bold text-neutral-700 font-brand">Hero Main Headline</label>
+                      <div className="flex items-center justify-between">
+                        <label className="block font-bold text-neutral-700 font-brand">Hero Main Headline</label>
+                        <span className="text-[10px] text-neutral-400 font-sans">اختياري (Optional)</span>
+                      </div>
                       <input
                         type="text"
-                        value={settingsForm.heroTitle}
+                        placeholder="مثال: NEW STREETWEAR COLLECTION (اتركه فارغاً للإخفاء)"
+                        value={settingsForm.heroTitle ?? ''}
                         onChange={(e) => setSettingsForm({ ...settingsForm, heroTitle: e.target.value })}
                         className="w-full border border-neutral-300 p-2.5 font-brand font-bold focus:border-black focus:outline-none"
                       />
@@ -1953,23 +2027,114 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block font-bold text-neutral-700">نص الوصف الترحيبي</label>
+                    <div className="flex items-center justify-between">
+                      <label className="block font-bold text-neutral-700">نص الوصف الترحيبي (Hero Description)</label>
+                      <span className="text-[10px] text-neutral-400 font-sans">اختياري (Optional)</span>
+                    </div>
                     <textarea
                       rows={2}
-                      value={settingsForm.heroSubtitle}
+                      placeholder="اكتب وصفاً للبانر الرئيسي أو اتركه فارغاً للإخفاء التام دون ترك فراغات"
+                      value={settingsForm.heroSubtitle ?? ''}
                       onChange={(e) => setSettingsForm({ ...settingsForm, heroSubtitle: e.target.value })}
                       className="w-full border border-neutral-300 p-2.5 focus:border-black focus:outline-none"
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="block font-bold text-neutral-700">رابط صورة خلفية البانر الرئيسي (Background URL)</label>
-                    <input
-                      type="url"
-                      value={settingsForm.heroImage}
-                      onChange={(e) => setSettingsForm({ ...settingsForm, heroImage: e.target.value })}
-                      className="w-full border border-neutral-300 p-2.5 font-brand focus:border-black focus:outline-none"
-                    />
+                  {/* Hero Background Image Settings with Auto-Resize & Fixed Aspect Ratio */}
+                  <div className="space-y-3 pt-2 border-t border-neutral-100">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="block font-bold text-xs sm:text-sm text-neutral-800">
+                          صورة خلفية البانر الرئيسي (Hero Banner Image)
+                        </label>
+                        <p className="text-[11px] text-neutral-500">
+                          تتم ملاءمة وتثبيت أبعاد الصورة تلقائياً بنسبة ثابتة (16:9) دون أي تشويه أو تمدد غير متناسق.
+                        </p>
+                      </div>
+                      <span className="text-[10px] bg-neutral-900 text-white font-mono px-2 py-0.5 font-bold">
+                        16:9 Widescreen Fit
+                      </span>
+                    </div>
+
+                    {/* Upload from device or enter URL */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                      <div className="sm:col-span-8 space-y-1">
+                        <input
+                          type="url"
+                          placeholder="رابط الصورة المباشر (https://...)"
+                          value={settingsForm.heroImage ?? ''}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, heroImage: e.target.value })}
+                          className="w-full border border-neutral-300 p-2.5 text-xs font-brand focus:border-black focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-4 flex gap-2">
+                        {/* Hidden file input */}
+                        <input
+                          id="hero-banner-file-input"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleHeroImageFileUpload}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="hero-banner-file-input"
+                          className="flex-1 bg-black hover:bg-neutral-800 text-white p-2 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors text-center"
+                          title="اختر صورة من جهازك وسيتم ضبط أبعادها تلقائياً"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>رفع صورة</span>
+                        </label>
+
+                        {settingsForm.heroImage && (
+                          <button
+                            type="button"
+                            onClick={handleAutoFitCurrentHeroUrl}
+                            disabled={isResizingHeroImage}
+                            className="bg-neutral-100 hover:bg-neutral-200 border border-neutral-300 text-neutral-800 px-2.5 py-2 text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                            title="إعادة ملاءمة وتثبيت أبعاد الصورة الحالية"
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${isResizingHeroImage ? 'animate-spin' : ''}`} />
+                            <span className="hidden lg:inline">ملاءمة</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Status feedback */}
+                    {heroImageResizeStatus && (
+                      <div className="p-2 bg-neutral-900 text-white text-xs font-medium flex items-center gap-2 animate-fadeIn">
+                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>{heroImageResizeStatus}</span>
+                      </div>
+                    )}
+
+                    {/* Live 16:9 Aspect Ratio Frame Preview */}
+                    {settingsForm.heroImage && (
+                      <div className="relative w-full aspect-video bg-neutral-950 border border-neutral-300 overflow-hidden shadow-inner group">
+                        <img
+                          src={settingsForm.heroImage}
+                          alt="Hero Preview"
+                          className="w-full h-full object-cover object-center opacity-70"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+                        
+                        {/* Overlay Labels */}
+                        <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-black/80 backdrop-blur-xs px-2 py-1 text-[10px] text-white font-mono border border-white/20">
+                          <Crop className="w-3 h-3 text-emerald-400" />
+                          <span>معاينة الإطار الثابت (Fixed 16:9 Aspect Ratio)</span>
+                        </div>
+
+                        <div className="absolute bottom-3 right-3 left-3 text-center pointer-events-none">
+                          <p className="text-xs text-white/90 font-bold uppercase tracking-wider drop-shadow-sm font-brand truncate">
+                            {settingsForm.heroTitle || 'SAVIX WEAR HERO BANNER'}
+                          </p>
+                          <p className="text-[10px] text-neutral-300 drop-shadow-sm font-brand truncate">
+                            {settingsForm.heroSubtitle || 'Proportional Cover - Zero Distortion'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -9,56 +9,87 @@ interface HeroBannerProps {
 }
 
 export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onExploreSale, settings }) => {
-  const badge = settings?.heroBadge || 'SAVIX SUMMER COLLECTION 2026';
-  const title = settings?.heroTitle || 'NEW STREETWEAR COLLECTION';
-  const subtitle =
-    settings?.heroSubtitle && !/[\u0600-\u06FF]/.test(settings.heroSubtitle)
-      ? settings.heroSubtitle
-      : 'Discover the latest urban streetwear essentials crafted from 100% premium Egyptian heavyweight cotton with clean minimalist aesthetics.';
+  // If settings prop is provided, we check if user provided content or left it empty.
+  // If empty (blank/spaces), the element is omitted without leaving empty space.
+  const hasSettings = settings !== undefined;
+
+  const badge = hasSettings
+    ? (settings.heroBadge || '').trim()
+    : 'SAVIX SUMMER COLLECTION 2026';
+
+  const title = hasSettings
+    ? (settings.heroTitle || '').trim()
+    : 'NEW STREETWEAR COLLECTION';
+
+  const subtitle = hasSettings
+    ? (settings.heroSubtitle || '').trim()
+    : 'Discover the latest urban streetwear essentials crafted from 100% premium Egyptian heavyweight cotton with clean minimalist aesthetics.';
+
   const ctaText =
     settings?.heroCtaText && !/[\u0600-\u06FF]/.test(settings.heroCtaText)
       ? settings.heroCtaText
       : 'SHOP COLLECTION NOW';
+
   const heroImage =
     settings?.heroImage ||
     'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1600&q=80';
 
+  const hasAnyText = Boolean(badge || title || subtitle);
+
   return (
-    <div className="relative bg-neutral-900 text-white overflow-hidden font-brand" dir="ltr">
-      {/* Background Image with Dark Overlay */}
-      <div className="absolute inset-0 z-0">
+    <section
+      className="relative w-full min-h-[85vh] sm:min-h-[88vh] md:min-h-[92vh] lg:min-h-[calc(100vh-64px)] flex flex-col justify-end bg-neutral-950 text-white overflow-hidden font-brand select-none"
+      dir="ltr"
+    >
+      {/* Immersive Full-Screen Background Image */}
+      <div className="absolute inset-0 z-0 w-full h-full overflow-hidden pointer-events-none">
         <img
           src={heroImage}
-          alt="Streetwear Lookbook"
-          className="w-full h-full object-cover object-center opacity-40 scale-105 transition-transform duration-1000"
+          alt="Savix Wear Streetwear Visual"
+          className="w-full h-full object-cover object-center scale-100 transform transition-transform duration-1000 ease-out"
+          loading="eager"
+          decoding="async"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-900/60 to-transparent" />
+
+        {/* Calibrated Dark Gradient & Ambient Scrim: Ensures maximum image vibrancy + crisp text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/25" />
+        <div className="absolute inset-0 bg-radial-gradient from-transparent via-black/20 to-black/60 pointer-events-none" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32 md:py-40 flex flex-col items-center text-center">
+      {/* Hero Content Overlay (Positioned toward the lower part of the Hero image) */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 sm:pb-12 md:pb-14 flex flex-col items-center text-center">
         
-        {/* Top Tag / Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-none bg-white/10 backdrop-blur-md border border-white/20 text-[11px] sm:text-xs tracking-[0.2em] uppercase font-semibold mb-6">
-          <Sparkles className="w-3.5 h-3.5 text-white" />
-          <span>{badge}</span>
-        </div>
+        {/* Top Tag / Badge - Optional */}
+        {badge ? (
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-none bg-black/40 backdrop-blur-md border border-white/25 text-[11px] sm:text-xs tracking-[0.25em] uppercase font-semibold mb-4 sm:mb-5 shadow-sm text-white/95 animate-fadeIn">
+            <Sparkles className="w-3.5 h-3.5 text-white animate-pulse" />
+            <span>{badge}</span>
+          </div>
+        ) : null}
 
-        {/* Main Heading */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight uppercase max-w-4xl leading-tight">
-          {title}
-        </h1>
+        {/* Main Heading - Optional */}
+        {title ? (
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight uppercase max-w-5xl leading-[1.08] text-white drop-shadow-md animate-fadeIn">
+            {title}
+          </h1>
+        ) : null}
 
-        {/* Description */}
-        <p className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-neutral-300 max-w-2xl font-light leading-relaxed">
-          {subtitle}
-        </p>
+        {/* Description - Optional */}
+        {subtitle ? (
+          <p
+            className={`${
+              title ? 'mt-3 sm:mt-5' : ''
+            } text-xs sm:text-base md:text-lg text-neutral-200/95 max-w-2xl font-normal leading-relaxed drop-shadow-sm px-2 animate-fadeIn`}
+          >
+            {subtitle}
+          </p>
+        ) : null}
 
         {/* CTA Buttons */}
-        <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+        <div className={`${hasAnyText ? 'mt-6 sm:mt-8' : 'mt-2'} flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto max-w-md sm:max-w-none`}>
           <button
             onClick={onShopNow}
-            className="bg-white text-black hover:bg-neutral-200 font-bold px-8 py-4 text-xs sm:text-sm tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl cursor-pointer"
+            className="bg-white text-black hover:bg-neutral-200 font-black px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl hover:-translate-y-0.5 cursor-pointer active:translate-y-0"
           >
             <span>{ctaText}</span>
             <ArrowRight className="w-4 h-4" />
@@ -66,14 +97,14 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onExploreSale
 
           <button
             onClick={onExploreSale}
-            className="bg-transparent hover:bg-white/10 text-white border border-white/40 font-bold px-8 py-4 text-xs sm:text-sm tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+            className="bg-black/40 hover:bg-white/15 text-white border border-white/40 hover:border-white font-bold px-8 sm:px-10 py-3.5 sm:py-4 text-xs sm:text-sm tracking-wider uppercase backdrop-blur-xs transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:translate-y-0"
           >
-            <span>DISCOVER SALE & OFFERS 🔥</span>
+            <span>EXPLORE SPECIAL DROPS 🔥</span>
           </button>
         </div>
 
-        {/* Feature Guarantees Strip */}
-        <div className="mt-14 sm:mt-20 pt-8 border-t border-white/15 grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-4xl text-neutral-300 text-xs">
+        {/* Feature Guarantees Strip: Positioned directly over the visual section at the bottom */}
+        <div className="mt-10 sm:mt-12 pt-6 sm:pt-8 border-t border-white/15 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 w-full max-w-4xl text-neutral-300 text-[11px] sm:text-xs">
           <div className="flex items-center justify-center gap-2">
             <Truck className="w-4 h-4 text-white shrink-0" />
             <span className="font-medium">Fast Nationwide Delivery</span>
@@ -81,7 +112,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onExploreSale
 
           <div className="flex items-center justify-center gap-2">
             <ShieldCheck className="w-4 h-4 text-white shrink-0" />
-            <span className="font-medium">100% Premium Egyptian Cotton</span>
+            <span className="font-medium">100% Egyptian Cotton</span>
           </div>
 
           <div className="flex items-center justify-center gap-2">
@@ -96,6 +127,6 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onShopNow, onExploreSale
         </div>
 
       </div>
-    </div>
+    </section>
   );
 };
